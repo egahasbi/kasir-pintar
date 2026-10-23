@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Tag, X, Check, Search, Percent, AlertCircle, RefreshCw } from 'lucide-react';
-import { supabase } from '../../server/config/supabase';
+import { supabase } from '../../lib/supabaseClient';
 
 export interface DiscountItem {
   id: string;

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
   TrendingUp,
-  PackageAlert,
+  AlertTriangle as PackageAlert,
   Sparkles,
   Tag,
   DollarSign,

@@ -1,4 +1,4 @@
-export type UserRole = 'owner' | 'manager' | 'cashier';
+export type UserRole = 'owner' | 'manager' | 'cashier' | 'admin';
 
 export interface UserProfile {
   id: string;
@@ -30,45 +30,81 @@ export interface Category {
 
 export interface Product {
   id: string;
-  store_id: string;
-  category_id: string | null;
-  category?: Category;
-  sku: string;
-  barcode: string | null;
+  store_id?: string;
+  category_id?: string | null;
+  category?: Category | string;
+  sku?: string;
+  barcode?: string | null;
   name: string;
-  description: string | null;
+  description?: string | null;
   cost_price: number;
-  selling_price: number;
-  stock_quantity: number;
-  min_stock_alert: number;
-  unit: string;
-  image_url: string | null;
+  selling_price?: number;
+  price: number;
+  stock_quantity?: number;
+  stock: number;
+  min_stock?: number;
+  min_stock_alert?: number;
+  unit?: string;
+  image_url?: string | null;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Coupon {
+  id: string;
+  code: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  minPurchase?: number;
+  maxDiscount?: number;
+  isActive: boolean;
+}
+
+export interface ForecastItem {
+  product_id: string;
+  product_name: string;
+  current_stock: number;
+  projected_runout_days: number;
+  recommended_restock_qty: number;
+  risk_level: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  reasoning: string;
+}
+
+export interface DiscountPromotion {
+  id: string;
+  code: string;
+  name: string;
+  type?: 'percentage' | 'fixed';
+  discount_percent?: number;
+  discount_amount?: number;
   is_active: boolean;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface DiscountRule {
   id: string;
-  store_id: string;
-  code: string | null;
+  store_id?: string;
+  code?: string | null;
   name: string;
-  type: 'percentage' | 'fixed_amount';
-  value: number;
-  min_purchase_amount: number;
-  max_discount_amount: number | null;
-  start_date: string | null;
-  end_date: string | null;
-  is_active: boolean;
-  created_at: string;
+  type?: 'percentage' | 'fixed_amount';
+  value?: number;
+  discountPercent?: number;
+  minQuantity?: number;
+  min_purchase_amount?: number;
+  max_discount_amount?: number | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  is_active?: boolean;
+  isActive?: boolean;
+  created_at?: string;
 }
 
 export interface CartItem {
   product: Product;
   quantity: number;
-  unit_price: number;
-  discount_amount: number;
-  subtotal: number;
+  unit_price?: number;
+  discount_amount?: number;
+  subtotal?: number;
   notes?: string;
 }
 

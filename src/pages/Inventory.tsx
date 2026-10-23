@@ -101,7 +101,11 @@ export default function Inventory() {
   }, [fetchInventory]);
 
   const categories = useMemo(() => {
-    const cats = new Set(items.map((i) => i.category).filter(Boolean));
+    const cats = new Set(
+      items
+        .map((i) => (typeof i.category === 'object' && i.category ? (i.category as any).name : i.category))
+        .filter(Boolean) as string[]
+    );
     return ['all', ...Array.from(cats)];
   }, [items]);
 
@@ -416,7 +420,9 @@ export default function Inventory() {
                         </div>
                       </td>
                       <td className="py-3.5 px-4 text-slate-600 capitalize">
-                        {item.category || 'Standard'}
+                        {typeof item.category === 'object' && item.category
+                          ? (item.category as any).name
+                          : item.category || 'Standard'}
                       </td>
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-2">

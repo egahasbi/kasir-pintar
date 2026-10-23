@@ -6,7 +6,7 @@ import {
   Sparkles, 
   RefreshCw, 
   TrendingUp, 
-  PackageAlert, 
+  AlertTriangle as PackageAlert, 
   Tag, 
   User, 
   Loader2,

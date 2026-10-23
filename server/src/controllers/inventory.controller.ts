@@ -433,3 +433,25 @@ export const batchCheckout = async (
     res.status(500).json({ error: 'Internal server error', message });
   }
 };
+
+export const getInventory = getProducts;
+export const updateStock = adjustStock;
+
+export const getLowStockAlerts = async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .filter('stock', 'lte', 'min_stock_alert');
+
+    if (error) {
+      res.status(500).json({ error: error.message });
+      return;
+    }
+
+    res.status(200).json({ success: true, data: data || [] });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown server error';
+    res.status(500).json({ error: message });
+  }
+};
