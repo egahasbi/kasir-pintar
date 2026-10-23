@@ -1,177 +1,196 @@
 import { Request, Response } from 'express';
 import { supabase } from '../config/supabase.js';
-import { generateInventoryForecast } from '../services/forecast.service.js';
 
-interface StockLevelQuery {
-  category?: string;
-  lowStockOnly?: string;
-  search?: string;
+export interface ProductParams {
+  id: string;
 }
 
-export const getDynamicStockLevels = async (req: Request<{}, {}, {}, StockLevelQuery>, res: Response): Promise<void> => {
+export interface CreateProductBody {
+  name: string;
+  sku: string;
+  barcode?: string | null;
+  category: string;
+  price: number;
+  cost_price: number;
+  stock: number;
+  min_stock_alert?: number;
+  unit?: string;
+  image_url?: string | null;
+}
+
+export interface UpdateProductBody {
+  name?: string;
+  sku?: string;
+  barcode?: string | null;
+  category?: string;
+  price?: number;
+  cost_price?: number;
+  stock?: number;
+  min_stock_alert?: number;
+  unit?: string;
+  image_url?: string | null;
+}
+
+export interface StockAdjustmentBody {
+  quantity: number;
+  reason: 'sale' | 'restock' | 'damage' | 'loss' | 'correction';
+  notes?: string;
+}
+
+export interface BatchCheckoutItem {
+  id: string;
+  quantity: number;
+}
+
+export interface BatchCheckoutBody {
+  items: BatchCheckoutItem[];
+  invoice_number?: string;
+}
+
+export const getProducts = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { category, lowStockOnly, search } = req.query;
+    const { category, search, low_stock } = req.query;
 
-    let query = supabase
-      .from('products')
-      .select(`
-        id,
-        name,
-        sku,
-        category,
-        price,
-        cost_price,
-        stock_quantity,
-        min_stock_threshold,
-        unit,
-        updated_at,
-        restock_alerts (
-          id,
-          status,
-          priority,
-          suggested_quantity,
-          created_at
-        )
-      `)
-      .order('stock_quantity', { ascending: true });
+    let query = supabase.from('products').select('*').order('created_at', { ascending: false });
 
-    if (category) {
+    if (category && typeof category === 'string') {
       query = query.eq('category', category);
     }
 
-    if (search) {
-      query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%`);
+    if (search && typeof search === 'string') {
+      query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%,barcode.ilike.%${search}%`);
     }
 
-    const { data: products, error } = await query;
+    if (low_stock === 'true') {
+      query = query.filter('stock', 'lte', 'min_stock_alert');
+    }
+
+    const { data, error } = await query;
 
     if (error) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: 'Database fetch failed', message: error.message });
       return;
     }
 
-    const calculatedStock = (products || []).map((product) => {
-      const stock = product.stock_quantity ?? 0;
-      const minStock = product.min_stock_threshold ?? 10;
-      const isLowStock = stock <= minStock;
-      const stockDeficit = isLowStock ? minStock - stock : 0;
-      const stockHealth = stock === 0 ? 'CRITICAL_OUT' : isLowStock ? 'LOW' : stock <= minStock * 1.5 ? 'WARNING' : 'HEALTHY';
-
-      return {
-        ...product,
-        is_low_stock: isLowStock,
-        stock_deficit: stockDeficit,
-        stock_health: stockHealth,
-        reorder_recommended: isLowStock
-      };
-    });
-
-    const filtered = lowStockOnly === 'true' 
-      ? calculatedStock.filter((p) => p.is_low_stock)
-      : calculatedStock;
-
-    res.status(200).json({
-      success: true,
-      count: filtered.length,
-      data: filtered
-    });
+    res.status(200).json({ success: true, data: data ?? [] });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal server error';
-    res.status(500).json({ error: message });
+    const message = err instanceof Error ? err.message : 'Unknown server error';
+    res.status(500).json({ error: 'Internal server error', message });
   }
 };
 
-export const triggerRestockAlert = async (req: Request, res: Response): Promise<void> => {
+export const getProductById = async (req: Request<ProductParams>, res: Response): Promise<void> => {
   try {
-    const { productId, suggestedQuantity, note, priority } = req.body;
+    const { id } = req.params;
 
-    if (!productId) {
-      res.status(400).json({ error: 'productId is required' });
+    if (!id || typeof id !== 'string') {
+      res.status(400).json({ error: 'Invalid product ID' });
       return;
     }
 
-    const { data: product, error: fetchErr } = await supabase
+    const { data, error } = await supabase
       .from('products')
-      .select('id, name, stock_quantity, min_stock_threshold')
-      .eq('id', productId)
+      .select('*')
+      .eq('id', id)
       .single();
 
-    if (fetchErr || !product) {
-      res.status(404).json({ error: 'Product not found' });
+    if (error) {
+      res.status(404).json({ error: 'Product not found', message: error.message });
       return;
     }
 
-    const defaultQuantity = Math.max(
-      (product.min_stock_threshold * 2) - product.stock_quantity,
-      product.min_stock_threshold
-    );
+    res.status(200).json({ success: true, data });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown server error';
+    res.status(500).json({ error: 'Internal server error', message });
+  }
+};
 
-    const alertPayload = {
-      product_id: product.id,
-      current_stock: product.stock_quantity,
-      threshold_stock: product.min_stock_threshold,
-      suggested_quantity: suggestedQuantity && Number(suggestedQuantity) > 0 ? Number(suggestedQuantity) : defaultQuantity,
-      priority: priority || (product.stock_quantity <= 0 ? 'CRITICAL' : 'HIGH'),
-      status: 'PENDING',
-      notes: note || `Manual restock alert triggered for ${product.name}`,
-      created_at: new Date().toISOString()
-    };
+export const createProduct = async (
+  req: Request<Record<string, never>, unknown, CreateProductBody>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { name, sku, category, price, cost_price, stock, barcode, min_stock_alert, unit, image_url } = req.body;
 
-    const { data: alert, error: insertErr } = await supabase
-      .from('restock_alerts')
-      .insert(alertPayload)
+    if (!name || !sku || !category || price === undefined || cost_price === undefined || stock === undefined) {
+      res.status(400).json({
+        error: 'Missing required product fields: name, sku, category, price, cost_price, stock'
+      });
+      return;
+    }
+
+    if (price < 0 || cost_price < 0 || stock < 0) {
+      res.status(400).json({ error: 'Numeric fields cannot be negative' });
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('products')
+      .insert([
+        {
+          name: name.trim(),
+          sku: sku.trim(),
+          barcode: barcode ? barcode.trim() : null,
+          category: category.trim(),
+          price: Number(price),
+          cost_price: Number(cost_price),
+          stock: Number(stock),
+          min_stock_alert: min_stock_alert !== undefined ? Number(min_stock_alert) : 10,
+          unit: unit ? unit.trim() : 'pcs',
+          image_url: image_url || null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ])
       .select()
       .single();
 
-    if (insertErr) {
-      res.status(500).json({ error: insertErr.message });
+    if (error) {
+      const status = error.code === '23505' ? 409 : 400;
+      res.status(status).json({ error: 'Product creation failed', message: error.message });
       return;
     }
 
-    res.status(201).json({
-      success: true,
-      message: 'Restock alert triggered successfully',
-      data: alert
-    });
+    res.status(201).json({ success: true, data });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal server error';
-    res.status(500).json({ error: message });
+    const message = err instanceof Error ? err.message : 'Unknown server error';
+    res.status(500).json({ error: 'Internal server error', message });
   }
 };
 
-export const getStockForecasting = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { days = '30', productId } = req.query;
-    const forecastDays = Math.min(Math.max(parseInt(days as string, 10) || 30, 7), 90);
-
-    const forecastData = await generateInventoryForecast(forecastDays, productId as string | undefined);
-
-    res.status(200).json({
-      success: true,
-      forecast_horizon_days: forecastDays,
-      data: forecastData
-    });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to generate inventory forecast';
-    res.status(500).json({ error: message });
-  }
-};
-
-export const dismissRestockAlert = async (req: Request, res: Response): Promise<void> => {
+export const updateProduct = async (
+  req: Request<ProductParams, unknown, UpdateProductBody>,
+  res: Response
+): Promise<void> => {
   try {
     const { id } = req.params;
-    const { resolutionNotes } = req.body;
+    const updates = req.body;
 
-    if (!id) {
-      res.status(400).json({ error: 'Alert ID is required' });
+    if (!id || typeof id !== 'string') {
+      res.status(400).json({ error: 'Invalid product ID' });
       return;
     }
 
-    const { data: updated, error } = await supabase
-      .from('restock_alerts')
+    if (!updates || Object.keys(updates).length === 0) {
+      res.status(400).json({ error: 'No update payload provided' });
+      return;
+    }
+
+    if (updates.price !== undefined && updates.price < 0) {
+      res.status(400).json({ error: 'Price cannot be negative' });
+      return;
+    }
+
+    if (updates.stock !== undefined && updates.stock < 0) {
+      res.status(400).json({ error: 'Stock cannot be negative' });
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('products')
       .update({
-        status: 'RESOLVED',
-        notes: resolutionNotes ? resolutionNotes : 'Dismissed by store manager',
+        ...updates,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
@@ -179,65 +198,238 @@ export const dismissRestockAlert = async (req: Request, res: Response): Promise<
       .single();
 
     if (error) {
-      res.status(500).json({ error: error.message });
+      res.status(400).json({ error: 'Product update failed', message: error.message });
       return;
     }
 
-    res.status(200).json({
-      success: true,
-      data: updated
-    });
+    if (!data) {
+      res.status(404).json({ error: 'Product not found' });
+      return;
+    }
+
+    res.status(200).json({ success: true, data });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal server error';
-    res.status(500).json({ error: message });
+    const message = err instanceof Error ? err.message : 'Unknown server error';
+    res.status(500).json({ error: 'Internal server error', message });
   }
 };
 
-export const getRestockAlerts = async (req: Request, res: Response): Promise<void> => {
+export const deleteProduct = async (req: Request<ProductParams>, res: Response): Promise<void> => {
   try {
-    const { status = 'PENDING' } = req.query;
+    const { id } = req.params;
 
-    let query = supabase
-      .from('restock_alerts')
-      .select(`
-        id,
-        product_id,
-        current_stock,
-        threshold_stock,
-        suggested_quantity,
-        priority,
-        status,
-        notes,
-        created_at,
-        products (
-          id,
-          name,
-          sku,
-          price,
-          category,
-          stock_quantity
-        )
-      `)
-      .order('created_at', { ascending: false });
-
-    if (status !== 'ALL') {
-      query = query.eq('status', status);
+    if (!id || typeof id !== 'string') {
+      res.status(400).json({ error: 'Invalid product ID' });
+      return;
     }
 
-    const { data, error } = await query;
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', id);
 
     if (error) {
-      res.status(500).json({ error: error.message });
+      res.status(400).json({ error: 'Product deletion failed', message: error.message });
       return;
+    }
+
+    res.status(200).json({ success: true, message: 'Product deleted successfully' });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown server error';
+    res.status(500).json({ error: 'Internal server error', message });
+  }
+};
+
+export const adjustStock = async (
+  req: Request<ProductParams, unknown, StockAdjustmentBody>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { quantity, reason, notes } = req.body;
+
+    if (!id || typeof id !== 'string') {
+      res.status(400).json({ error: 'Invalid product ID' });
+      return;
+    }
+
+    if (quantity === undefined || typeof quantity !== 'number' || quantity === 0) {
+      res.status(400).json({ error: 'Non-zero numeric quantity required' });
+      return;
+    }
+
+    const validReasons = ['sale', 'restock', 'damage', 'loss', 'correction'];
+    if (!reason || !validReasons.includes(reason)) {
+      res.status(400).json({ error: `Invalid reason. Must be one of: ${validReasons.join(', ')}` });
+      return;
+    }
+
+    const { data: product, error: fetchError } = await supabase
+      .from('products')
+      .select('stock')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !product) {
+      res.status(404).json({ error: 'Product not found' });
+      return;
+    }
+
+    const newStock = product.stock + quantity;
+    if (newStock < 0) {
+      res.status(400).json({
+        error: 'Insufficient stock',
+        current_stock: product.stock,
+        attempted_deduction: Math.abs(quantity)
+      });
+      return;
+    }
+
+    const { data: updatedProduct, error: updateError } = await supabase
+      .from('products')
+      .update({
+        stock: newStock,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (updateError) {
+      res.status(500).json({ error: 'Stock update failed', message: updateError.message });
+      return;
+    }
+
+    await supabase.from('inventory_logs').insert([
+      {
+        product_id: id,
+        delta: quantity,
+        balance: newStock,
+        reason,
+        notes: notes || null,
+        created_at: new Date().toISOString()
+      }
+    ]);
+
+    res.status(200).json({ success: true, data: updatedProduct });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown server error';
+    res.status(500).json({ error: 'Internal server error', message });
+  }
+};
+
+export const batchCheckout = async (
+  req: Request<Record<string, never>, unknown, BatchCheckoutBody>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { items, invoice_number } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      res.status(400).json({ error: 'Cart items array cannot be empty' });
+      return;
+    }
+
+    for (const item of items) {
+      if (!item.id || typeof item.quantity !== 'number' || item.quantity <= 0) {
+        res.status(400).json({
+          error: 'Every item must contain a valid id and positive quantity',
+          invalid_item: item
+        });
+        return;
+      }
+    }
+
+    const productIds = items.map((i) => i.id);
+    const { data: products, error: fetchError } = await supabase
+      .from('products')
+      .select('id, name, stock')
+      .in('id', productIds);
+
+    if (fetchError || !products) {
+      res.status(500).json({ error: 'Failed to verify inventory items', message: fetchError?.message });
+      return;
+    }
+
+    if (products.length !== productIds.length) {
+      const foundIds = new Set(products.map((p) => p.id));
+      const missingIds = productIds.filter((id) => !foundIds.has(id));
+      res.status(404).json({ error: 'Some products not found', missing_ids: missingIds });
+      return;
+    }
+
+    const productMap = new Map(products.map((p) => [p.id, p]));
+    const stockViolations: { id: string; name: string; requested: number; available: number }[] = [];
+
+    for (const item of items) {
+      const prod = productMap.get(item.id)!;
+      if (prod.stock < item.quantity) {
+        stockViolations.push({
+          id: prod.id,
+          name: prod.name,
+          requested: item.quantity,
+          available: prod.stock
+        });
+      }
+    }
+
+    if (stockViolations.length > 0) {
+      res.status(409).json({
+        error: 'Insufficient inventory for one or more items',
+        violations: stockViolations
+      });
+      return;
+    }
+
+    const updatedResults = [];
+    const logsPayload = [];
+    const timestamp = new Date().toISOString();
+
+    for (const item of items) {
+      const prod = productMap.get(item.id)!;
+      const targetStock = prod.stock - item.quantity;
+
+      const { data: updated, error: updateErr } = await supabase
+        .from('products')
+        .update({
+          stock: targetStock,
+          updated_at: timestamp
+        })
+        .eq('id', item.id)
+        .select()
+        .single();
+
+      if (updateErr) {
+        res.status(500).json({
+          error: `Failed to deduct stock for product ID: ${item.id}`,
+          message: updateErr.message
+        });
+        return;
+      }
+
+      updatedResults.push(updated);
+      logsPayload.push({
+        product_id: item.id,
+        delta: -item.quantity,
+        balance: targetStock,
+        reason: 'sale',
+        notes: invoice_number ? `POS Checkout: ${invoice_number}` : 'POS Checkout',
+        created_at: timestamp
+      });
+    }
+
+    if (logsPayload.length > 0) {
+      await supabase.from('inventory_logs').insert(logsPayload);
     }
 
     res.status(200).json({
       success: true,
-      count: data?.length || 0,
-      data: data || []
+      message: 'Batch checkout inventory sync complete',
+      processed_count: updatedResults.length,
+      data: updatedResults
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal server error';
-    res.status(500).json({ error: message });
+    const message = err instanceof Error ? err.message : 'Unknown server error';
+    res.status(500).json({ error: 'Internal server error', message });
   }
 };
