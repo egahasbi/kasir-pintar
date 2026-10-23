@@ -1,158 +1,207 @@
-export type UserRole = 'admin' | 'cashier' | 'manager';
-
-export type PaymentMethod = 'cash' | 'qris' | 'transfer' | 'debit';
-
-export type OrderStatus = 'completed' | 'pending' | 'cancelled';
+export type UserRole = 'owner' | 'manager' | 'cashier';
 
 export interface UserProfile {
   id: string;
   email: string;
   full_name: string;
   role: UserRole;
-  store_name?: string;
+  store_id: string;
   created_at: string;
-  updated_at?: string;
+  updated_at: string;
+}
+
+export interface Store {
+  id: string;
+  name: string;
+  address: string | null;
+  phone: string | null;
+  currency: string;
+  tax_rate: number;
+  created_at: string;
 }
 
 export interface Category {
   id: string;
+  store_id: string;
   name: string;
-  slug: string;
-  created_at?: string;
+  description: string | null;
+  created_at: string;
 }
 
 export interface Product {
   id: string;
-  barcode: string;
-  name: string;
-  description?: string;
-  cost_price: number;
-  price: number;
-  stock: number;
-  min_stock: number;
-  unit: string;
-  category_id?: string;
+  store_id: string;
+  category_id: string | null;
   category?: Category;
-  image_url?: string;
+  sku: string;
+  barcode: string | null;
+  name: string;
+  description: string | null;
+  cost_price: number;
+  selling_price: number;
+  stock_quantity: number;
+  min_stock_alert: number;
+  unit: string;
+  image_url: string | null;
   is_active: boolean;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DiscountRule {
+  id: string;
+  store_id: string;
+  code: string | null;
+  name: string;
+  type: 'percentage' | 'fixed_amount';
+  value: number;
+  min_purchase_amount: number;
+  max_discount_amount: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  is_active: boolean;
+  created_at: string;
 }
 
 export interface CartItem {
   product: Product;
   quantity: number;
+  unit_price: number;
   discount_amount: number;
   subtotal: number;
+  notes?: string;
 }
 
-export interface Transaction {
-  id: string;
-  invoice_number: string;
-  cashier_id: string;
-  cashier?: UserProfile;
-  total_amount: number;
-  discount_total: number;
-  tax_amount: number;
-  final_amount: number;
-  payment_method: PaymentMethod;
-  amount_paid: number;
-  change_amount: number;
-  status: OrderStatus;
-  notes?: string;
-  created_at: string;
-  items?: TransactionItem[];
-}
+export type PaymentMethod = 'cash' | 'qris' | 'debit_card' | 'credit_card' | 'bank_transfer';
+export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
+export type TransactionStatus = 'draft' | 'completed' | 'cancelled' | 'refunded';
 
 export interface TransactionItem {
   id: string;
   transaction_id: string;
   product_id: string;
-  product?: Product;
   product_name: string;
-  unit_price: number;
+  product_sku: string;
   cost_price: number;
+  unit_price: number;
   quantity: number;
-  subtotal: number;
   discount_amount: number;
-  created_at?: string;
+  subtotal: number;
+  created_at: string;
 }
 
-export type DiscountType = 'percentage' | 'fixed_amount';
-
-export type DiscountTarget = 'all_products' | 'category' | 'specific_product' | 'minimum_spend';
-
-export interface DiscountRule {
+export interface Transaction {
   id: string;
-  name: string;
-  code?: string;
-  discount_type: DiscountType;
-  discount_value: number;
-  target_type: DiscountTarget;
-  target_id?: string | null;
-  min_purchase_amount?: number;
-  max_discount_amount?: number | null;
-  start_date: string;
-  end_date: string;
-  is_active: boolean;
-  usage_limit?: number | null;
-  used_count: number;
-  created_at?: string;
-  updated_at?: string;
+  store_id: string;
+  cashier_id: string;
+  cashier_name?: string;
+  invoice_number: string;
+  customer_name: string | null;
+  customer_phone: string | null;
+  subtotal: number;
+  tax_amount: number;
+  discount_amount: number;
+  discount_id: string | null;
+  discount?: DiscountRule;
+  total_amount: number;
+  amount_paid: number;
+  change_amount: number;
+  payment_method: PaymentMethod;
+  payment_status: PaymentStatus;
+  status: TransactionStatus;
+  notes: string | null;
+  items?: TransactionItem[];
+  created_at: string;
+  updated_at: string;
 }
 
-export type AlertSeverity = 'info' | 'warning' | 'critical';
+export interface CreateTransactionDTO {
+  store_id: string;
+  cashier_id: string;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  discount_id?: string | null;
+  discount_amount: number;
+  tax_amount: number;
+  subtotal: number;
+  total_amount: number;
+  amount_paid: number;
+  change_amount: number;
+  payment_method: PaymentMethod;
+  notes?: string | null;
+  items: {
+    product_id: string;
+    product_name: string;
+    product_sku: string;
+    cost_price: number;
+    unit_price: number;
+    quantity: number;
+    discount_amount: number;
+    subtotal: number;
+  }[];
+}
 
-export type AlertStatus = 'active' | 'acknowledged' | 'resolved';
-
-export interface RestockAlert {
+export interface StockMovement {
   id: string;
+  store_id: string;
   product_id: string;
   product?: Product;
-  current_stock: number;
-  min_stock_threshold: number;
-  suggested_order_quantity: number;
-  severity: AlertSeverity;
-  status: AlertStatus;
-  supplier_name?: string | null;
-  last_notified_at?: string | null;
+  user_id: string;
+  change_type: 'in' | 'out' | 'adjustment' | 'sale' | 'return';
+  quantity: number;
+  remaining_stock: number;
+  reference_id: string | null;
+  reason: string | null;
   created_at: string;
-  updated_at?: string;
 }
 
-export interface AIStockForecastItem {
+export interface InventoryRestockAlert {
   product_id: string;
   product_name: string;
-  predicted_demand: number;
-  days_until_stockout: number;
-  recommended_restock: number;
-  confidence_score: number;
-  trend: 'increasing' | 'stable' | 'decreasing';
-  reasoning: string;
-}
-
-export interface AIStockForecast {
-  id: string;
-  generated_at: string;
-  period_days: number;
-  total_sku_analyzed: number;
-  forecast_items: AIStockForecastItem[];
-  summary_insights: string;
-  model_version?: string;
+  sku: string;
+  current_stock: number;
+  min_stock_alert: number;
+  suggested_order_qty: number;
+  urgency: 'low' | 'medium' | 'high' | 'critical';
 }
 
 export interface SalesAnalyticsSummary {
-  today_revenue: number;
-  today_transactions: number;
-  today_profit: number;
-  low_stock_count: number;
-  revenue_growth_percentage: number;
-  top_selling_products: {
-    product_id: string;
-    product_name: string;
-    total_qty: number;
-    total_sales: number;
-  }[];
+  total_revenue: number;
+  total_profit: number;
+  total_transactions: number;
+  average_order_value: number;
+  cash_revenue: number;
+  qris_revenue: number;
+  card_revenue: number;
+  date_start: string;
+  date_end: string;
+}
+
+export interface TopSellingProduct {
+  product_id: string;
+  product_name: string;
+  sku: string;
+  units_sold: number;
+  total_revenue: number;
+  total_profit: number;
+}
+
+export interface SalesForecastPoint {
+  date: string;
+  predicted_revenue: number;
+  confidence_lower: number;
+  confidence_upper: number;
+  trend: 'up' | 'down' | 'stable';
+}
+
+export interface StockForecastResult {
+  product_id: string;
+  product_name: string;
+  current_stock: number;
+  days_until_stockout: number;
+  estimated_stockout_date: string | null;
+  reorder_recommended: boolean;
+  recommended_order_quantity: number;
 }
 
 export interface AiChatMessage {
@@ -160,5 +209,44 @@ export interface AiChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: string;
-  metadata?: Record<string, unknown>;
+  context_data?: Record<string, unknown>;
+}
+
+export interface AiRecommendation {
+  type: 'stock_replenishment' | 'pricing_optimization' | 'promotion_opportunity' | 'dead_stock_alert';
+  title: string;
+  description: string;
+  impact_score: number;
+  action_payload?: Record<string, unknown>;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+export interface ReceiptData {
+  store_name: string;
+  store_address: string | null;
+  store_phone: string | null;
+  invoice_number: string;
+  cashier_name: string;
+  customer_name: string | null;
+  date: string;
+  items: {
+    name: string;
+    quantity: number;
+    unit_price: number;
+    subtotal: number;
+  }[];
+  subtotal: number;
+  tax_amount: number;
+  discount_amount: number;
+  total_amount: number;
+  amount_paid: number;
+  change_amount: number;
+  payment_method: PaymentMethod;
+  notes: string | null;
 }
