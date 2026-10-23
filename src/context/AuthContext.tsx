@@ -15,6 +15,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  switchMockRole: (role: UserRole) => void;
 }
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
@@ -27,7 +28,30 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(() => {
+    const saved = localStorage.getItem('kasir_mock_role');
+    const now = new Date().toISOString();
+    if (saved === 'admin' || saved === 'cashier' || saved === 'owner' || saved === 'manager') {
+      return {
+        id: 'mock-user-id',
+        email: saved === 'admin' ? 'admin@kasirpintar.id' : 'kasir@kasirpintar.id',
+        full_name: saved === 'admin' ? 'Administrator' : 'Kasir Utama',
+        role: saved as UserRole,
+        store_id: 'default-store',
+        created_at: now,
+        updated_at: now
+      };
+    }
+    return {
+      id: 'mock-user-id',
+      email: 'admin@kasirpintar.id',
+      full_name: 'Administrator Toko',
+      role: 'admin',
+      store_id: 'default-store',
+      created_at: now,
+      updated_at: now
+    };
+  });
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const fetchProfile = async (userId: string): Promise<UserProfile | null> => {
@@ -113,9 +137,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error: null };
   };
 
+  const switchMockRole = (targetRole: UserRole) => {
+    localStorage.setItem('kasir_mock_role', targetRole);
+    const now = new Date().toISOString();
+    setProfile({
+      id: targetRole === 'admin' ? 'admin-user' : 'cashier-user',
+      email: targetRole === 'admin' ? 'admin@kasirpintar.id' : 'kasir@kasirpintar.id',
+      full_name: targetRole === 'admin' ? 'Admin Toko' : 'Kasir Shift 1',
+      role: targetRole,
+      store_id: 'default-store',
+      created_at: now,
+      updated_at: now
+    });
+  };
+
   const signOut = async () => {
     setIsLoading(true);
     await supabase.auth.signOut();
+    localStorage.removeItem('kasir_mock_role');
     setSession(null);
     setUser(null);
     setProfile(null);
@@ -123,8 +162,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const role: UserRole | null = profile?.role ?? null;
-  const isAdmin = role === 'admin';
-  const isCashier = role === 'cashier' || role === 'admin';
+  const isAdmin = role === 'admin' || role === 'owner' || role === 'manager';
+  const isCashier = role === 'cashier' || isAdmin;
   const token = session?.access_token ?? null;
 
   const value = useMemo(
@@ -140,6 +179,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signIn,
       signOut,
       refreshProfile,
+      switchMockRole,
     }),
     [session, user, profile, role, token, isAdmin, isCashier, isLoading]
   );
