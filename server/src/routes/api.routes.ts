@@ -1,94 +1,186 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase.js';
-import { generateDemandForecast, getDynamicDiscounts } from '../services/forecast.service.js';
-import { handleAiChat, handleSalesInsight } from '../controllers/ai.controller.js';
 import {
-  getInventoryItems,
-  updateProductStock,
+  getInventory,
+  getProductById,
+  createProduct,
+  updateProduct,
+  deleteProduct,
   getLowStockAlerts,
+  updateStock
 } from '../controllers/inventory.controller.js';
+import {
+  askBusinessAssistant,
+  getDemandForecast,
+  suggestPricingOptimization
+} from '../controllers/ai.controller.js';
 
 const router = Router();
 
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    email?: string;
-    role?: string;
-  };
-}
-
-const requireAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      res.status(401).json({ error: 'Missing or invalid authorization token' });
-      return;
-    }
-
-    const token = authHeader.split(' ')[1];
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-
-    if (error || !user) {
-      res.status(401).json({ error: 'Unauthorized access', details: error?.message });
-      return;
-    }
-
-    req.user = {
-      id: user.id,
-      email: user.email,
-      role: user.user_metadata?.role || 'cashier',
-    };
-
-    next();
-  } catch (err: any) {
-    res.status(500).json({ error: 'Authentication processing failed', details: err.message });
-  }
-};
-
 router.get('/health', (_req: Request, res: Response) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    service: 'Kasir Pintar AI Backend API'
+  });
 });
 
-router.post('/ai/chat', requireAuth, handleAiChat);
-router.post('/ai/sales-insight', requireAuth, handleSalesInsight);
+// Inventory routes
+router.get('/inventory', getInventory);
+router.get('/inventory/alerts', getLowStockAlerts);
+router.get('/inventory/:id', getProductById);
+router.post('/inventory', createProduct);
+router.put('/inventory/:id', updateProduct);
+router.patch('/inventory/:id/stock', updateStock);
+router.delete('/inventory/:id', deleteProduct);
 
-router.get('/inventory', requireAuth, getInventoryItems);
-router.patch('/inventory/:id/stock', requireAuth, updateProductStock);
-router.get('/inventory/alerts/low-stock', requireAuth, getLowStockAlerts);
+// AI Assistant & Analytics routes
+router.post('/ai/chat', askBusinessAssistant);
+router.get('/ai/forecast', getDemandForecast);
+router.post('/ai/pricing-suggestions', suggestPricingOptimization);
 
-router.get('/inventory/forecast', requireAuth, async (req: Request, res: Response): Promise<void> => {
+// Sales & Transaction routes
+router.get('/transactions', async (req: Request, res: Response) => {
   try {
-    const daysParam = req.query.days ? parseInt(req.query.days as string, 10) : 30;
-    const storeId = req.query.storeId as string | undefined;
+    const { limit = '50', offset = '0', startDate, endDate } = req.query;
 
-    if (Number.isNaN(daysParam) || daysParam <= 0) {
-      res.status(400).json({ error: 'Invalid days parameter. Must be positive integer.' });
-      return;
+    let query = supabase
+      .from('transactions')
+      .select('*, transaction_items(*, products(*))')
+      .order('created_at', { ascending: false })
+      .range(Number(offset), Number(offset) + Number(limit) - 1);
+
+    if (startDate) {
+      query = query.gte('created_at', String(startDate));
+    }
+    if (endDate) {
+      query = query.lte('created_at', String(endDate));
     }
 
-    const forecasts = await generateDemandForecast(daysParam, storeId);
-    res.status(200).json({ success: true, data: forecasts });
-  } catch (error: any) {
-    res.status(500).json({
-      error: 'Failed to generate demand forecast',
-      message: error.message || 'Internal server error',
-    });
+    const { data, error } = await query;
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    return res.status(200).json({ data });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to fetch transactions';
+    return res.status(500).json({ error: message });
   }
 });
 
-router.get('/discounts/dynamic', requireAuth, async (req: Request, res: Response): Promise<void> => {
+router.get('/transactions/:id', async (req: Request, res: Response) => {
   try {
-    const category = req.query.category as string | undefined;
-    const storeId = req.query.storeId as string | undefined;
+    const { id } = req.params;
 
-    const discounts = await getDynamicDiscounts({ category, storeId });
-    res.status(200).json({ success: true, data: discounts });
-  } catch (error: any) {
-    res.status(500).json({
-      error: 'Failed to retrieve dynamic discounts',
-      message: error.message || 'Internal server error',
-    });
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*, transaction_items(*, products(*))')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      return res.status(404).json({ error: 'Transaction not found' });
+    }
+
+    return res.status(200).json({ data });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to fetch transaction';
+    return res.status(500).json({ error: message });
+  }
+});
+
+router.post('/transactions', async (req: Request, res: Response) => {
+  try {
+    const {
+      cashier_id,
+      payment_method,
+      total_amount,
+      discount_amount = 0,
+      tax_amount = 0,
+      final_amount,
+      items
+    } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'Transaction must contain at least one item' });
+    }
+
+    if (!payment_method || final_amount === undefined) {
+      return res.status(400).json({ error: 'Payment method and final amount required' });
+    }
+
+    const { data: transaction, error: txError } = await supabase
+      .from('transactions')
+      .insert({
+        cashier_id: cashier_id || null,
+        payment_method,
+        total_amount,
+        discount_amount,
+        tax_amount,
+        final_amount,
+        status: 'completed'
+      })
+      .select()
+      .single();
+
+    if (txError || !transaction) {
+      return res.status(400).json({ error: txError?.message || 'Failed to create transaction' });
+    }
+
+    const transactionItems = items.map((item: {
+      product_id: string;
+      quantity: number;
+      price_per_unit: number;
+      subtotal: number;
+    }) => ({
+      transaction_id: transaction.id,
+      product_id: item.product_id,
+      quantity: item.quantity,
+      price_per_unit: item.price_per_unit,
+      subtotal: item.subtotal
+    }));
+
+    const { error: itemsError } = await supabase
+      .from('transaction_items')
+      .insert(transactionItems);
+
+    if (itemsError) {
+      await supabase.from('transactions').delete().eq('id', transaction.id);
+      return res.status(400).json({ error: itemsError.message });
+    }
+
+    for (const item of items) {
+      const { data: product } = await supabase
+        .from('products')
+        .select('stock_quantity')
+        .eq('id', item.product_id)
+        .single();
+
+      if (product) {
+        const nextStock = Math.max(0, product.stock_quantity - item.quantity);
+        await supabase
+          .from('products')
+          .update({ stock_quantity: nextStock, updated_at: new Date().toISOString() })
+          .eq('id', item.product_id);
+      }
+    }
+
+    const { data: completeTransaction, error: fetchError } = await supabase
+      .from('transactions')
+      .select('*, transaction_items(*, products(*))')
+      .eq('id', transaction.id)
+      .single();
+
+    if (fetchError) {
+      return res.status(201).json({ data: transaction });
+    }
+
+    return res.status(201).json({ data: completeTransaction });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Transaction failed';
+    return res.status(500).json({ error: message });
   }
 });
 
