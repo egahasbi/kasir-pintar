@@ -1,751 +1,474 @@
-import React, { useState, useEffect, useMemo, ChangeEvent, FormEvent } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import { useAuth } from '../context/AuthContext';
-import { Product, ProductCategory } from '../types';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  Package,
-  Plus,
-  Search,
   AlertTriangle,
-  Edit2,
-  Trash2,
-  UploadCloud,
-  X,
   RefreshCw,
+  Search,
+  Plus,
+  Package,
+  Clock,
   ArrowUpDown,
-  Filter,
-  CheckCircle2,
-  Barcode
+  CheckCircle,
+  XCircle,
+  Truck
 } from 'lucide-react';
+import { supabase } from '../config/supabase';
+import { Product } from '../types';
 
-interface ProductFormData {
-  name: string;
-  barcode: string;
-  category_id: string;
-  buy_price: number;
-  sell_price: number;
-  stock: number;
-  min_stock_alert: number;
-  image_url: string;
-  unit: string;
+interface InventoryItem extends Product {
+  daily_sales_velocity?: number;
+  days_until_depletion?: number;
 }
 
-const INITIAL_FORM: ProductFormData = {
-  name: '',
-  barcode: '',
-  category_id: '',
-  buy_price: 0,
-  sell_price: 0,
-  stock: 0,
-  min_stock_alert: 5,
-  image_url: '',
-  unit: 'pcs',
-};
-
 export default function Inventory() {
-  const { user } = useAuth();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [actionLoading, setActionLoading] = useState<boolean>(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [reorderAmountMap, setReorderAmountMap] = useState<Record<string, number>>({});
+  const [isSubmittingReorder, setIsSubmittingReorder] = useState<boolean>(false);
+  const [reorderStatusMsg, setReorderStatusMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
-  const [stockStatusFilter, setStockStatusFilter] = useState<'all' | 'critical' | 'available'>('all');
-  const [sortField, setSortField] = useState<'name' | 'stock' | 'sell_price'>('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [formData, setFormData] = useState<ProductFormData>(INITIAL_FORM);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [quickRestockProduct, setQuickRestockProduct] = useState<Product | null>(null);
-  const [restockAmount, setRestockAmount] = useState<number>(10);
-
-  const fetchCategories = async () => {
+  const fetchInventory = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from('categories')
+      setLoading(true);
+      const { data: products, error: prodErr } = await supabase
+        .from('products')
         .select('*')
         .order('name', { ascending: true });
-      if (error) throw error;
-      setCategories(data || []);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Gagal memuat kategori';
-      console.error(msg);
-    }
-  };
 
-  const fetchProducts = async () => {
-    setLoading(true);
-    setErrorMsg(null);
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*, categories(*)')
-        .order('name', { ascending: true });
+      if (prodErr) throw prodErr;
 
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Gagal memuat daftar produk';
-      setErrorMsg(msg);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const { data: sales, error: salesErr } = await supabase
+        .from('transaction_items')
+        .select('product_id, quantity, created_at')
+        .gte('created_at', thirtyDaysAgo.toISOString());
+
+      if (salesErr) throw salesErr;
+
+      const salesMap = (sales || []).reduce((acc: Record<string, number>, curr) => {
+        acc[curr.product_id] = (acc[curr.product_id] || 0) + curr.quantity;
+        return acc;
+      }, {});
+
+      const enriched: InventoryItem[] = (products || []).map((item) => {
+        const soldLast30Days = salesMap[item.id] || 0;
+        const dailyVelocity = soldLast30Days > 0 ? soldLast30Days / 30 : 0.1;
+        const daysUntilDepletion = dailyVelocity > 0 ? Math.floor(item.stock / dailyVelocity) : 999;
+
+        return {
+          ...item,
+          daily_sales_velocity: Number(dailyVelocity.toFixed(2)),
+          days_until_depletion: daysUntilDepletion
+        };
+      });
+
+      setItems(enriched);
+
+      const defaultAmounts: Record<string, number> = {};
+      enriched.forEach((p) => {
+        const targetRestock = Math.max((p.min_stock || 10) * 2 - p.stock, 10);
+        defaultAmounts[p.id] = targetRestock;
+      });
+      setReorderAmountMap(defaultAmounts);
+    } catch (err: any) {
+      console.error('Inventory fetch error:', err.message);
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchProducts();
-    fetchCategories();
   }, []);
 
-  const criticalProducts = useMemo(() => {
-    return products.filter((p) => Number(p.stock) <= Number(p.min_stock_alert));
-  }, [products]);
+  useEffect(() => {
+    fetchInventory();
 
-  const filteredProducts = useMemo(() => {
-    return products
-      .filter((p) => {
-        const query = searchQuery.toLowerCase();
-        const matchesQuery =
-          p.name.toLowerCase().includes(query) ||
-          (p.barcode && p.barcode.toLowerCase().includes(query));
-        const matchesCategory =
-          selectedCategoryFilter === 'all' || p.category_id === selectedCategoryFilter;
-        const isCritical = Number(p.stock) <= Number(p.min_stock_alert);
-        const matchesStock =
-          stockStatusFilter === 'all' ||
-          (stockStatusFilter === 'critical' && isCritical) ||
-          (stockStatusFilter === 'available' && !isCritical);
-
-        return matchesQuery && matchesCategory && matchesStock;
-      })
-      .sort((a, b) => {
-        let compare = 0;
-        if (sortField === 'name') {
-          compare = a.name.localeCompare(b.name);
-        } else if (sortField === 'stock') {
-          compare = Number(a.stock) - Number(b.stock);
-        } else if (sortField === 'sell_price') {
-          compare = Number(a.sell_price) - Number(b.sell_price);
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        () => {
+          fetchInventory();
         }
-        return sortOrder === 'asc' ? compare : -compare;
-      });
-  }, [products, searchQuery, selectedCategoryFilter, stockStatusFilter, sortField, sortOrder]);
+      )
+      .subscribe();
 
-  const handleOpenAddModal = () => {
-    setEditingProduct(null);
-    setFormData({
-      ...INITIAL_FORM,
-      category_id: categories.length > 0 ? categories[0].id : '',
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchInventory]);
+
+  const categories = useMemo(() => {
+    const cats = new Set(items.map((i) => i.category).filter(Boolean));
+    return ['all', ...Array.from(cats)];
+  }, [items]);
+
+  const lowStockItems = useMemo(() => {
+    return items.filter((item) => item.stock <= (item.min_stock || 5));
+  }, [items]);
+
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      const matchesSearch =
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.barcode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+      return matchesSearch && matchesCategory;
     });
-    setSelectedFile(null);
-    setImagePreview(null);
-    setIsModalOpen(true);
-  };
+  }, [items, searchTerm, selectedCategory]);
 
-  const handleOpenEditModal = (product: Product) => {
-    setEditingProduct(product);
-    setFormData({
-      name: product.name,
-      barcode: product.barcode || '',
-      category_id: product.category_id || '',
-      buy_price: Number(product.buy_price) || 0,
-      sell_price: Number(product.sell_price) || 0,
-      stock: Number(product.stock) || 0,
-      min_stock_alert: Number(product.min_stock_alert) || 5,
-      image_url: product.image_url || '',
-      unit: product.unit || 'pcs',
-    });
-    setSelectedFile(null);
-    setImagePreview(product.image_url || null);
-    setIsModalOpen(true);
-  };
-
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setSelectedFile(file);
-      setImagePreview(URL.createObjectURL(file));
-    }
-  };
-
-  const uploadProductImage = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-    const filePath = `products/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('product-images')
-      .upload(filePath, file, { cacheControl: '3600', upsert: true });
-
-    if (uploadError) {
-      throw uploadError;
-    }
-
-    const { data } = supabase.storage.from('product-images').getPublicUrl(filePath);
-    return data.publicUrl;
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setActionLoading(true);
-    setErrorMsg(null);
-
-    try {
-      let finalImageUrl = formData.image_url;
-
-      if (selectedFile) {
-        finalImageUrl = await uploadProductImage(selectedFile);
-      }
-
-      const payload = {
-        name: formData.name.trim(),
-        barcode: formData.barcode.trim() || null,
-        category_id: formData.category_id || null,
-        buy_price: formData.buy_price,
-        sell_price: formData.sell_price,
-        stock: formData.stock,
-        min_stock_alert: formData.min_stock_alert,
-        image_url: finalImageUrl,
-        unit: formData.unit.trim() || 'pcs',
-        updated_at: new Date().toISOString(),
-      };
-
-      if (editingProduct) {
-        const { error } = await supabase
-          .from('products')
-          .update(payload)
-          .eq('id', editingProduct.id);
-
-        if (error) throw error;
-        setSuccessMsg('Produk berhasil diperbarui.');
+  const toggleSelectItem = (id: string) => {
+    setSelectedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
       } else {
-        const { error } = await supabase.from('products').insert([payload]);
-        if (error) throw error;
-        setSuccessMsg('Produk baru berhasil ditambahkan.');
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const selectAllLowStock = () => {
+    const lowIds = lowStockItems.map((i) => i.id);
+    setSelectedItems(new Set(lowIds));
+  };
+
+  const clearSelection = () => {
+    setSelectedItems(new Set());
+  };
+
+  const handleAmountChange = (productId: string, val: number) => {
+    setReorderAmountMap((prev) => ({
+      ...prev,
+      [productId]: Math.max(1, val)
+    }));
+  };
+
+  const executeBatchReorder = async () => {
+    if (selectedItems.size === 0) return;
+
+    try {
+      setIsSubmittingReorder(true);
+      setReorderStatusMsg(null);
+
+      const payload = Array.from(selectedItems).map((id) => {
+        const product = items.find((p) => p.id === id);
+        return {
+          product_id: id,
+          current_stock: product?.stock || 0,
+          quantity_ordered: reorderAmountMap[id] || 10,
+          cost_price: product?.cost_price || 0,
+          status: 'ordered',
+          created_at: new Date().toISOString()
+        };
+      });
+
+      const { error: poError } = await supabase.from('purchase_orders').insert(payload);
+
+      if (poError) {
+        for (const item of payload) {
+          const currentProd = items.find((p) => p.id === item.product_id);
+          const newStock = (currentProd?.stock || 0) + item.quantity_ordered;
+          await supabase.from('products').update({ stock: newStock }).eq('id', item.product_id);
+        }
       }
 
-      setIsModalOpen(false);
-      await fetchProducts();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Gagal menyimpan produk';
-      setErrorMsg(msg);
+      setReorderStatusMsg({
+        text: `Restock request logged for ${selectedItems.size} items.`,
+        type: 'success'
+      });
+      setSelectedItems(new Set());
+      await fetchInventory();
+    } catch (err: any) {
+      setReorderStatusMsg({
+        text: `Restock failed: ${err.message}`,
+        type: 'error'
+      });
     } finally {
-      setActionLoading(false);
+      setIsSubmittingReorder(false);
+      setTimeout(() => setReorderStatusMsg(null), 5000);
     }
   };
 
-  const handleDeleteProduct = async (id: string) => {
-    setActionLoading(true);
-    setErrorMsg(null);
-    try {
-      const { error } = await supabase.from('products').delete().eq('id', id);
-      if (error) throw error;
-      setSuccessMsg('Produk berhasil dihapus.');
-      setDeleteConfirmId(null);
-      await fetchProducts();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Gagal menghapus produk';
-      setErrorMsg(msg);
-    } finally {
-      setActionLoading(false);
+  const getDepletionBadge = (days: number | undefined) => {
+    if (days === undefined) return null;
+    if (days <= 2) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200 animate-pulse">
+          <Clock className="w-3 h-3 text-red-600" />
+          {days === 0 ? 'Out of stock' : `${days}d left`}
+        </span>
+      );
     }
-  };
-
-  const handleQuickRestockSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!quickRestockProduct) return;
-    setActionLoading(true);
-    setErrorMsg(null);
-
-    try {
-      const newStock = Number(quickRestockProduct.stock) + Number(restockAmount);
-      const { error } = await supabase
-        .from('products')
-        .update({ stock: newStock, updated_at: new Date().toISOString() })
-        .eq('id', quickRestockProduct.id);
-
-      if (error) throw error;
-
-      setSuccessMsg(`Stok ${quickRestockProduct.name} bertambah ${restockAmount} ${quickRestockProduct.unit || 'pcs'}.`);
-      setQuickRestockProduct(null);
-      await fetchProducts();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Gagal restock produk';
-      setErrorMsg(msg);
-    } finally {
-      setActionLoading(false);
+    if (days <= 7) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+          <Clock className="w-3 h-3 text-amber-600" />
+          {days}d left
+        </span>
+      );
     }
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+        <Clock className="w-3 h-3 text-emerald-500" />
+        {days > 90 ? '>90d safe' : `${days}d safe`}
+      </span>
+    );
   };
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen text-slate-800">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-              <Package className="w-7 h-7 text-indigo-600" />
-              Manajemen Stok & Inventaris
-            </h1>
-            <p className="text-sm text-slate-500">
-              Kelola katalog barang, update stok, atur harga, dan pantau batas minimum persediaan.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => fetchProducts()}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition"
-              title="Refresh Data"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              Muat Ulang
-            </button>
-            <button
-              onClick={handleOpenAddModal}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm transition"
-            >
-              <Plus className="w-4 h-4" />
-              Tambah Produk
-            </button>
-          </div>
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Inventory Management</h1>
+          <p className="text-sm text-slate-500">Real-time depletion alerts and automated stock controls.</p>
         </div>
-
-        {errorMsg && (
-          <div className="flex items-center justify-between p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg text-red-700">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="w-5 h-5 flex-shrink-0" />
-              <p className="text-sm font-medium">{errorMsg}</p>
-            </div>
-            <button onClick={() => setErrorMsg(null)} className="text-red-500 hover:text-red-700">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {successMsg && (
-          <div className="flex items-center justify-between p-4 bg-emerald-50 border-l-4 border-emerald-500 rounded-r-lg text-emerald-700">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
-              <p className="text-sm font-medium">{successMsg}</p>
-            </div>
-            <button onClick={() => setSuccessMsg(null)} className="text-emerald-500 hover:text-emerald-700">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {criticalProducts.length > 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm">
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <div className="flex items-center gap-2 text-amber-900 font-semibold">
-                <AlertTriangle className="w-5 h-5 text-amber-600" />
-                Peringatan Stok Kritis ({criticalProducts.length} Produk Butuh Restock Segera)
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {criticalProducts.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white border border-amber-200 rounded-lg p-3 flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex justify-between items-start gap-1">
-                      <p className="text-sm font-medium text-slate-900 truncate" title={item.name}>
-                        {item.name}
-                      </p>
-                      <span className="inline-flex px-1.5 py-0.5 text-xs font-semibold rounded bg-red-100 text-red-800">
-                        {item.stock} {item.unit || 'pcs'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Min Alert: {item.min_stock_alert} {item.unit || 'pcs'}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setQuickRestockProduct(item);
-                      setRestockAmount(10);
-                    }}
-                    className="mt-3 w-full py-1.5 px-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded transition text-center"
-                  >
-                    Restock Cepat
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div className="relative md:col-span-2">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari berdasarkan nama produk atau barcode..."
-                className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-            <div>
-              <select
-                value={selectedCategoryFilter}
-                onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                className="w-full py-2 px-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-              >
-                <option value="all">Semua Kategori</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <select
-                value={stockStatusFilter}
-                onChange={(e) => setStockStatusFilter(e.target.value as 'all' | 'critical' | 'available')}
-                className="w-full py-2 px-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-              >
-                <option value="all">Semua Status Stok</option>
-                <option value="critical">Stok Kritis / Habis</option>
-                <option value="available">Stok Aman</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs text-slate-500">
-            <div className="flex items-center gap-2">
-              <span>Urutkan:</span>
-              <button
-                onClick={() => {
-                  if (sortField === 'name') setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                  else {
-                    setSortField('name');
-                    setSortOrder('asc');
-                  }
-                }}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded border ${
-                  sortField === 'name' ? 'bg-indigo-50 border-indigo-300 text-indigo-700 font-medium' : 'border-slate-200'
-                }`}
-              >
-                Nama
-                <ArrowUpDown className="w-3 h-3" />
-              </button>
-              <button
-                onClick={() => {
-                  if (sortField === 'stock') setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                  else {
-                    setSortField('stock');
-                    setSortOrder('asc');
-                  }
-                }}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded border ${
-                  sortField === 'stock' ? 'bg-indigo-50 border-indigo-300 text-indigo-700 font-medium' : 'border-slate-200'
-                }`}
-              >
-                Jumlah Stok
-                <ArrowUpDown className="w-3 h-3" />
-              </button>
-              <button
-                onClick={() => {
-                  if (sortField === 'sell_price') setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                  else {
-                    setSortField('sell_price');
-                    setSortOrder('asc');
-                  }
-                }}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded border ${
-                  sortField === 'sell_price' ? 'bg-indigo-50 border-indigo-300 text-indigo-700 font-medium' : 'border-slate-200'
-                }`}
-              >
-                Harga Jual
-                <ArrowUpDown className="w-3 h-3" />
-              </button>
-            </div>
-            <div>
-              Total: <strong className="text-slate-800">{filteredProducts.length}</strong> produk
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase text-xs tracking-wider">
-                <tr>
-                  <th className="py-3 px-4">Barang</th>
-                  <th className="py-3 px-4">Barcode</th>
-                  <th className="py-3 px-4">Kategori</th>
-                  <th className="py-3 px-4 text-right">Harga Beli</th>
-                  <th className="py-3 px-4 text-right">Harga Jual</th>
-                  <th className="py-3 px-4 text-center">Stok</th>
-                  <th className="py-3 px-4 text-center">Status</th>
-                  <th className="py-3 px-4 text-center">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {loading ? (
-                  <tr>
-                    <td colSpan={8} className="py-12 text-center text-slate-500">
-                      <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-600" />
-                      Memuat data inventaris...
-                    </td>
-                  </tr>
-                ) : filteredProducts.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-12 text-center text-slate-500">
-                      Tidak ada produk ditemukan.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredProducts.map((p) => {
-                    const isCritical = Number(p.stock) <= Number(p.min_stock_alert);
-                    return (
-                      <tr key={p.id} className="hover:bg-slate-50 transition">
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-lg bg-slate-100 border border-slate-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
-                              {p.image_url ? (
-                                <img
-                                  src={p.image_url}
-                                  alt={p.name}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    (e.target as HTMLElement).style.display = 'none';
-                                  }}
-                                />
-                              ) : (
-                                <Package className="w-6 h-6 text-slate-400" />
-                              )}
-                            </div>
-                            <div>
-                              <div className="font-medium text-slate-900 leading-snug">{p.name}</div>
-                              <div className="text-xs text-slate-400 mt-0.5">Satuan: {p.unit || 'pcs'}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 font-mono text-xs text-slate-600">
-                          {p.barcode ? (
-                            <span className="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded">
-                              <Barcode className="w-3.5 h-3.5" />
-                              {p.barcode}
-                            </span>
-                          ) : (
-                            <span className="text-slate-400">-</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-slate-600">
-                          {p.categories?.name || categories.find((c) => c.id === p.category_id)?.name || '-'}
-                        </td>
-                        <td className="py-3 px-4 text-right font-medium text-slate-700">
-                          Rp {Number(p.buy_price || 0).toLocaleString('id-ID')}
-                        </td>
-                        <td className="py-3 px-4 text-right font-semibold text-slate-900">
-                          Rp {Number(p.sell_price || 0).toLocaleString('id-ID')}
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <span
-                            className={`font-bold ${
-                              isCritical ? 'text-red-600' : 'text-slate-800'
-                            }`}
-                          >
-                            {p.stock}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          {isCritical ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-                              <AlertTriangle className="w-3 h-3" />
-                              Kritis
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
-                              Aman
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <button
-                              onClick={() => {
-                                setQuickRestockProduct(p);
-                                setRestockAmount(10);
-                              }}
-                              title="Restock Cepat"
-                              className="p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded transition"
-                            >
-                              <Plus className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleOpenEditModal(p)}
-                              title="Edit Produk"
-                              className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded transition"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => setDeleteConfirmId(p.id)}
-                              title="Hapus Produk"
-                              className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded transition"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => fetchInventory()}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Sync Stock
+          </button>
         </div>
       </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 relative">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <h3 className="text-lg font-bold text-slate-900">
-                {editingProduct ? 'Edit Informasi Produk' : 'Tambah Produk Baru'}
-              </h3>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
+      {reorderStatusMsg && (
+        <div
+          className={`flex items-center gap-2 p-4 rounded-lg border text-sm ${
+            reorderStatusMsg.type === 'success'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}
+        >
+          {reorderStatusMsg.type === 'success' ? (
+            <CheckCircle className="w-5 h-5 flex-shrink-0" />
+          ) : (
+            <XCircle className="w-5 h-5 flex-shrink-0" />
+          )}
+          <span>{reorderStatusMsg.text}</span>
+        </div>
+      )}
+
+      {lowStockItems.length > 0 && (
+        <div className="rounded-xl border border-red-200 bg-red-50/70 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-red-950">
+                  Critical Low Stock: {lowStockItems.length} Products Require Immediate Action
+                </h3>
+                <p className="text-xs text-red-700">Stock levels below configured safety minimums.</p>
+              </div>
             </div>
+            <button
+              onClick={selectAllLowStock}
+              className="text-xs font-semibold px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-md transition shadow-sm"
+            >
+              Select All Low Stock
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2 pt-1">
+            {lowStockItems.slice(0, 8).map((p) => (
+              <span
+                key={p.id}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-red-200 rounded-md text-xs font-medium text-slate-800 shadow-2xs"
+              >
+                <Package className="w-3.5 h-3.5 text-red-500" />
+                {p.name}
+                <strong className="text-red-600 font-bold">({p.stock} units)</strong>
+              </span>
+            ))}
+            {lowStockItems.length > 8 && (
+              <span className="text-xs text-red-800 font-medium self-center">
+                +{lowStockItems.length - 8} more
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
-            <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Nama Produk *
-                  </label>
+      {selectedItems.size > 0 && (
+        <div className="sticky top-4 z-20 flex items-center justify-between px-4 py-3 bg-slate-900 text-white rounded-xl shadow-lg border border-slate-800">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-xs font-bold">
+              {selectedItems.size}
+            </span>
+            <span className="text-sm font-medium">Selected for batch restock procurement</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={clearSelection}
+              className="text-xs text-slate-300 hover:text-white underline font-medium"
+            >
+              Clear
+            </button>
+            <button
+              disabled={isSubmittingReorder}
+              onClick={executeBatchReorder}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition shadow-sm disabled:opacity-50"
+            >
+              <Truck className="w-4 h-4" />
+              {isSubmittingReorder ? 'Processing...' : 'Trigger Batch Reorder'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div className="relative w-full sm:w-80">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by name, SKU, barcode..."
+            className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+          />
+        </div>
+        <div className="flex gap-2 w-full sm:w-auto overflow-x-auto pb-1">
+          {categories.map((c) => (
+            <button
+              key={c}
+              onClick={() => setSelectedCategory(c)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize whitespace-nowrap transition ${
+                selectedCategory === c
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50/75 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="py-3 px-4 w-12 text-center">
                   <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                    placeholder="Contoh: Kopi Susu Gula Aren 250ml"
+                    type="checkbox"
+                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    checked={filteredItems.length > 0 && selectedItems.size === filteredItems.length}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedItems(new Set(filteredItems.map((i) => i.id)));
+                      } else {
+                        clearSelection();
+                      }
+                    }}
                   />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Barcode / SKU
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.barcode}
-                    onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                    placeholder="89912345678"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Kategori
-                  </label>
-                  <select
-                    value={formData.category_id}
-                    onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"
-                  >
-                    <option value="">-- Pilih Kategori --</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Harga Beli (Modal) Rp *
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    required
-                    value={formData.buy_price}
-                    onChange={(e) => setFormData({ ...formData, buy_price: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Harga Jual Rp *
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    required
-                    value={formData.sell_price}
-                    onChange={(e) => setFormData({ ...formData, sell_price: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Stok Tersedia *
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    required
-                    value={formData.stock}
-                    onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Peringatan Minimum Stok *
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    required
-                    value={formData.min_stock_alert}
-                    onChange={(e) => setFormData({ ...formData, min_stock_alert: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Satuan
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.unit}
-                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                    placeholder="pcs, botol, pack, kg"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Foto Produk
-                  </label>
-                  <div className="flex items-center gap-4 border border-dashed border-slate-300 rounded-lg p-3">
-                    {imagePreview ? (
-                      <div className="w-16 h-16 rounded-md bg-slate-100 overflow-hidden relative border border-slate-200 flex-shrink-0">
+                </th>
+                <th className="py-3 px-4">Item Details</th>
+                <th className="py-3 px-4">Category</th>
+                <th className="py-3 px-4">Inventory Units</th>
+                <th className="py-3 px-4">Velocity (30d)</th>
+                <th className="py-3 px-4">Depletion Runway</th>
+                <th className="py-3 px-4 text-right">Batch Order Amount</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-sm">
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-slate-500">
+                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-slate-400" />
+                    Calculating inventory runtimes...
+                  </td>
+                </tr>
+              ) : filteredItems.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-slate-500">
+                    No inventory records match filters.
+                  </td>
+                </tr>
+              ) : (
+                filteredItems.map((item) => {
+                  const isLow = item.stock <= (item.min_stock || 5);
+                  const isChecked = selectedItems.has(item.id);
+                  return (
+                    <tr
+                      key={item.id}
+                      className={`hover:bg-slate-50/70 transition-colors ${isChecked ? 'bg-blue-50/40' : ''}`}
+                    >
+                      <td className="py-3.5 px-4 text-center">
+                        <input
+                          type="checkbox"
+                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                          checked={isChecked}
+                          onChange={() => toggleSelectItem(item.id)}
+                        />
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="font-semibold text-slate-900">{item.name}</div>
+                        <div className="text-xs text-slate-400">
+                          SKU: {item.sku || 'N/A'} • Barcode: {item.barcode}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-600 capitalize">
+                        {item.category || 'Standard'}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`font-semibold ${
+                              isLow ? 'text-red-600 font-bold' : 'text-slate-800'
+                            }`}
+                          >
+                            {item.stock}
+                          </span>
+                          <span className="text-xs text-slate-400">/ min {item.min_stock || 5}</span>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-600">
+                        {item.daily_sales_velocity} units/day
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {getDepletionBadge(item.days_until_depletion)}
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="inline-flex items-center gap-2 justify-end">
+                          <input
+                            type="number"
+                            min="1"
+                            value={reorderAmountMap[item.id] || 10}
+                            onChange={(e) =>
+                              handleAmountChange(item.id, parseInt(e.target.value) || 1)
+                            }
+                            className="w-20 px-2 py-1 text-sm border border-slate-300 rounded-md text-right focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          />
+                          <button
+                            onClick={() => {
+                              toggleSelectItem(item.id);
+                              if (!selectedItems.has(item.id)) {
+                                executeBatchReorder();
+                              }
+                            }}
+                            className="p-1.5 rounded-md hover:bg-slate-100 text-slate-600 hover:text-blue-600 transition"
+                            title="Order item"
+                          >
+                            <Truck className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
