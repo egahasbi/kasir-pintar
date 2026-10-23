@@ -1,12 +1,15 @@
-export type Role = 'owner' | 'manager' | 'cashier';
+export type UserRole = 'admin' | 'cashier' | 'manager';
 
-export interface User {
+export type PaymentMethod = 'cash' | 'qris' | 'transfer' | 'debit';
+
+export type OrderStatus = 'completed' | 'pending' | 'cancelled';
+
+export interface UserProfile {
   id: string;
   email: string;
   full_name: string;
-  role: Role;
-  phone?: string | null;
-  avatar_url?: string | null;
+  role: UserRole;
+  store_name?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -15,48 +18,59 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
-  created_at: string;
+  created_at?: string;
 }
 
 export interface Product {
   id: string;
-  sku: string;
-  barcode?: string | null;
+  barcode: string;
   name: string;
-  description?: string | null;
-  category_id?: string | null;
-  category?: Category | null;
-  price: number;
+  description?: string;
   cost_price: number;
+  price: number;
   stock: number;
-  min_stock_alert: number;
+  min_stock: number;
   unit: string;
-  image_url?: string | null;
+  category_id?: string;
+  category?: Category;
+  image_url?: string;
   is_active: boolean;
-  created_at: string;
+  created_at?: string;
   updated_at?: string;
 }
 
 export interface CartItem {
   product: Product;
   quantity: number;
-  discount_percentage?: number;
-  discount_amount?: number;
+  discount_amount: number;
   subtotal: number;
-  notes?: string;
 }
 
-export type PaymentMethod = 'cash' | 'qris' | 'transfer' | 'debit' | 'credit';
-
-export type TransactionStatus = 'pending' | 'completed' | 'canceled' | 'refunded';
+export interface Transaction {
+  id: string;
+  invoice_number: string;
+  cashier_id: string;
+  cashier?: UserProfile;
+  total_amount: number;
+  discount_total: number;
+  tax_amount: number;
+  final_amount: number;
+  payment_method: PaymentMethod;
+  amount_paid: number;
+  change_amount: number;
+  status: OrderStatus;
+  notes?: string;
+  created_at: string;
+  items?: TransactionItem[];
+}
 
 export interface TransactionItem {
   id: string;
   transaction_id: string;
   product_id: string;
+  product?: Product;
   product_name: string;
-  product_sku: string;
-  price: number;
+  unit_price: number;
   cost_price: number;
   quantity: number;
   subtotal: number;
@@ -64,92 +78,87 @@ export interface TransactionItem {
   created_at?: string;
 }
 
-export interface Transaction {
+export type DiscountType = 'percentage' | 'fixed_amount';
+
+export type DiscountTarget = 'all_products' | 'category' | 'specific_product' | 'minimum_spend';
+
+export interface DiscountRule {
   id: string;
-  invoice_number: string;
-  cashier_id: string;
-  cashier?: User | null;
-  customer_name?: string | null;
-  customer_phone?: string | null;
-  payment_method: PaymentMethod;
-  status: TransactionStatus;
-  subtotal: number;
-  tax_amount: number;
-  discount_amount: number;
-  total_amount: number;
-  amount_paid: number;
-  change_amount: number;
-  notes?: string | null;
-  items: TransactionItem[];
+  name: string;
+  code?: string;
+  discount_type: DiscountType;
+  discount_value: number;
+  target_type: DiscountTarget;
+  target_id?: string | null;
+  min_purchase_amount?: number;
+  max_discount_amount?: number | null;
+  start_date: string;
+  end_date: string;
+  is_active: boolean;
+  usage_limit?: number | null;
+  used_count: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type AlertSeverity = 'info' | 'warning' | 'critical';
+
+export type AlertStatus = 'active' | 'acknowledged' | 'resolved';
+
+export interface RestockAlert {
+  id: string;
+  product_id: string;
+  product?: Product;
+  current_stock: number;
+  min_stock_threshold: number;
+  suggested_order_quantity: number;
+  severity: AlertSeverity;
+  status: AlertStatus;
+  supplier_name?: string | null;
+  last_notified_at?: string | null;
   created_at: string;
   updated_at?: string;
 }
 
-export interface SalesSummary {
-  date: string;
-  total_sales: number;
-  total_profit: number;
-  transaction_count: number;
-}
-
-export interface TopSellingProduct {
+export interface AIStockForecastItem {
   product_id: string;
   product_name: string;
-  total_quantity: number;
-  total_revenue: number;
+  predicted_demand: number;
+  days_until_stockout: number;
+  recommended_restock: number;
+  confidence_score: number;
+  trend: 'increasing' | 'stable' | 'decreasing';
+  reasoning: string;
 }
 
-export interface LowStockAlert {
-  product_id: string;
-  product_name: string;
-  current_stock: number;
-  min_stock_alert: number;
-  unit: string;
-}
-
-export interface PaymentDistribution {
-  method: PaymentMethod;
-  count: number;
-  total_amount: number;
-}
-
-export interface DashboardMetrics {
-  total_revenue_today: number;
-  total_profit_today: number;
-  total_transactions_today: number;
-  growth_revenue_percentage: number;
-  growth_transactions_percentage: number;
-  sales_chart: SalesSummary[];
-  top_products: TopSellingProduct[];
-  low_stock_items: LowStockAlert[];
-  payment_distribution: PaymentDistribution[];
-}
-
-export interface AiBusinessInsight {
+export interface AIStockForecast {
   id: string;
   generated_at: string;
-  summary: string;
-  strengths: string[];
-  weaknesses: string[];
-  recommendations: string[];
-  stock_predictions: {
+  period_days: number;
+  total_sku_analyzed: number;
+  forecast_items: AIStockForecastItem[];
+  summary_insights: string;
+  model_version?: string;
+}
+
+export interface SalesAnalyticsSummary {
+  today_revenue: number;
+  today_transactions: number;
+  today_profit: number;
+  low_stock_count: number;
+  revenue_growth_percentage: number;
+  top_selling_products: {
+    product_id: string;
     product_name: string;
-    estimated_days_left: number;
-    action_required: string;
+    total_qty: number;
+    total_sales: number;
   }[];
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  message?: string;
-  data: T;
-  error?: string;
-}
-
-export interface PaginatedResponse<T> {
-  items: T[];
-  total: number;
-  page: number;
-  per_page: number;
-  total_pages: number;
+export interface AiChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: string;
+  metadata?: Record<string, unknown>;
 }
