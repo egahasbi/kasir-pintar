@@ -1,29 +1,31 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Package,
-  Bot,
   ShoppingCart,
   LogIn,
   LogOut,
   User,
   ShieldCheck,
-  Settings
+  Settings as SettingsIcon,
+  Tag,
+  Users as UsersIcon
 } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import PosPage from './pages/PosPage';
 import Login from './pages/Login';
-import AiSetup from './pages/AiSetup';
-import AiAssistantDrawer from './components/ai/AiAssistantDrawer';
+import Settings from './pages/Settings';
+import Discounts from './pages/Discounts';
+import Users from './pages/Users';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { StoreProvider } from './context/StoreContext';
 
 function Navigation() {
   const location = useLocation();
   const { isAdmin, isCashier, isAuthenticated, signOut, switchMockRole } = useAuth();
-  const [isAiOpen, setIsAiOpen] = useState(false);
 
   const isLoginPage = location.pathname === '/login';
 
@@ -34,10 +36,10 @@ function Navigation() {
           <div className="flex items-center gap-4 sm:gap-6">
             <Link to={isAdmin ? '/' : '/pos'} className="flex items-center gap-2">
               <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-base sm:text-lg shadow-sm">
-                K
+                W
               </div>
               <span className="font-extrabold text-slate-900 text-base sm:text-lg tracking-tight">
-                Kasir Pintar <span className="text-emerald-600">AI</span>
+                WE<span className="text-emerald-600">CASH</span>
               </span>
             </Link>
 
@@ -47,10 +49,8 @@ function Navigation() {
                   <>
                     <Link
                       to="/"
-                      className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition ${
-                        location.pathname === '/'
-                          ? 'bg-emerald-50 text-emerald-700'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition ${
+                        location.pathname === '/' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                       }`}
                     >
                       <LayoutDashboard className="w-4 h-4" />
@@ -58,25 +58,39 @@ function Navigation() {
                     </Link>
                     <Link
                       to="/inventory"
-                      className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition ${
-                        location.pathname === '/inventory'
-                          ? 'bg-emerald-50 text-emerald-700'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition ${
+                        location.pathname === '/inventory' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                       }`}
                     >
                       <Package className="w-4 h-4" />
                       Inventaris
                     </Link>
                     <Link
-                      to="/setup-ai"
-                      className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition ${
-                        location.pathname === '/setup-ai'
-                          ? 'bg-purple-50 text-purple-700'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      to="/discounts"
+                      className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition ${
+                        location.pathname === '/discounts' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                       }`}
                     >
-                      <Settings className="w-4 h-4" />
-                      Setup AI
+                      <Tag className="w-4 h-4" />
+                      Kupon
+                    </Link>
+                    <Link
+                      to="/users"
+                      className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition ${
+                        location.pathname === '/users' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      }`}
+                    >
+                      <UsersIcon className="w-4 h-4" />
+                      Pengguna
+                    </Link>
+                    <Link
+                      to="/settings"
+                      className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition ${
+                        location.pathname === '/settings' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      }`}
+                    >
+                      <SettingsIcon className="w-4 h-4" />
+                      Toko
                     </Link>
                   </>
                 )}
@@ -138,17 +152,6 @@ function Navigation() {
                   )}
                 </div>
 
-                {isAdmin && (
-                  <button
-                    type="button"
-                    onClick={() => setIsAiOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold shadow-xs hover:from-emerald-700 hover:to-teal-700 transition"
-                  >
-                    <Bot className="w-4 h-4" />
-                    <span className="hidden sm:inline">Tanya AI</span>
-                  </button>
-                )}
-
                 <button
                   type="button"
                   onClick={() => signOut()}
@@ -205,14 +208,15 @@ function Navigation() {
                 <ShoppingCart className="w-4 h-4 mb-0.5" />
                 <span>Kasir</span>
               </Link>
-              <button
-                type="button"
-                onClick={() => setIsAiOpen(true)}
-                className="flex flex-col items-center py-1 px-2 rounded-xl text-[10px] font-bold text-slate-500"
+              <Link
+                to="/settings"
+                className={`flex flex-col items-center py-1 px-2 rounded-xl text-[10px] font-bold ${
+                  location.pathname === '/settings' ? 'text-emerald-600' : 'text-slate-500'
+                }`}
               >
-                <Bot className="w-4 h-4 mb-0.5 text-purple-600" />
-                <span>AI</span>
-              </button>
+                <SettingsIcon className="w-4 h-4 mb-0.5" />
+                <span>Toko</span>
+              </Link>
               <Link
                 to="/login"
                 className={`flex flex-col items-center py-1 px-2 rounded-xl text-[10px] font-bold ${
@@ -247,8 +251,6 @@ function Navigation() {
           )}
         </nav>
       )}
-
-      {isAdmin && <AiAssistantDrawer isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />}
     </>
   );
 }
@@ -278,51 +280,27 @@ function AuthGuard({ children, adminOnly = false }: { children: React.ReactNode;
 export default function App() {
   return (
     <AuthProvider>
-      <CartProvider>
-        <BrowserRouter>
-          <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-            <Navigation />
-            <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-20 md:pb-8">
-              <Routes>
-                <Route
-                  path="/"
-                  element={
-                    <AuthGuard adminOnly>
-                      <Dashboard />
-                    </AuthGuard>
-                  }
-                />
-                <Route
-                  path="/inventory"
-                  element={
-                    <AuthGuard adminOnly>
-                      <Inventory />
-                    </AuthGuard>
-                  }
-                />
-                <Route
-                  path="/setup-ai"
-                  element={
-                    <AuthGuard adminOnly>
-                      <AiSetup />
-                    </AuthGuard>
-                  }
-                />
-                <Route
-                  path="/pos"
-                  element={
-                    <AuthGuard>
-                      <PosPage />
-                    </AuthGuard>
-                  }
-                />
-                <Route path="/login" element={<Login />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </main>
-          </div>
-        </BrowserRouter>
-      </CartProvider>
+      <StoreProvider>
+        <CartProvider>
+          <BrowserRouter>
+            <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+              <Navigation />
+              <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-20 md:pb-8">
+                <Routes>
+                  <Route path="/" element={<AuthGuard adminOnly><Dashboard /></AuthGuard>} />
+                  <Route path="/inventory" element={<AuthGuard adminOnly><Inventory /></AuthGuard>} />
+                  <Route path="/discounts" element={<AuthGuard adminOnly><Discounts /></AuthGuard>} />
+                  <Route path="/users" element={<AuthGuard adminOnly><Users /></AuthGuard>} />
+                  <Route path="/settings" element={<AuthGuard adminOnly><Settings /></AuthGuard>} />
+                  <Route path="/pos" element={<AuthGuard><PosPage /></AuthGuard>} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </main>
+            </div>
+          </BrowserRouter>
+        </CartProvider>
+      </StoreProvider>
     </AuthProvider>
   );
 }

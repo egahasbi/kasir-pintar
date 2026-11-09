@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { Product, CartItem, DiscountRule, Coupon } from '../types';
+import { supabase } from '../lib/supabaseClient';
 
 interface CartContextType {
   cart: CartItem[];
@@ -9,7 +10,7 @@ interface CartContextType {
   clearCart: () => void;
   activeDiscounts: DiscountRule[];
   appliedCoupon: Coupon | null;
-  applyCoupon: (code: string) => { success: boolean; message: string };
+  applyCoupon: (code: string) => Promise<{ success: boolean; message: string }>;
   removeCoupon: () => void;
   taxRate: number;
   setTaxRate: (rate: number) => void;
@@ -25,35 +26,6 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 const STORAGE_KEY_CART = 'kasir_pintar_cart';
 const STORAGE_KEY_COUPON = 'kasir_pintar_coupon';
 const DEFAULT_PPN_RATE = 0.11;
-
-const PRESET_COUPONS: Coupon[] = [
-  {
-    id: 'c-umkm-berkah',
-    code: 'BERKAH10',
-    discountType: 'percentage',
-    discountValue: 10,
-    minPurchase: 50000,
-    maxDiscount: 25000,
-    isActive: true,
-  },
-  {
-    id: 'c-umkm-hemat',
-    code: 'HEMAT20K',
-    discountType: 'fixed',
-    discountValue: 20000,
-    minPurchase: 100000,
-    isActive: true,
-  },
-  {
-    id: 'c-umkm-merdeka',
-    code: 'MERDEKA',
-    discountType: 'percentage',
-    discountValue: 17,
-    minPurchase: 75000,
-    maxDiscount: 50000,
-    isActive: true,
-  },
-];
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -170,25 +142,46 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setAppliedCoupon(null);
   };
 
-  const applyCoupon = (code: string): { success: boolean; message: string } => {
+  const applyCoupon = async (code: string): Promise<{ success: boolean; message: string }> => {
     const cleanCode = code.trim().toUpperCase();
-    const found = PRESET_COUPONS.find((c) => c.code === cleanCode && c.isActive);
+    if (!cleanCode) return { success: false, message: 'Masukkan kode kupon.' };
 
-    if (!found) {
-      return { success: false, message: 'Kode kupon tidak valid atau kadaluarsa.' };
-    }
+    try {
+      const { data, error } = await supabase
+        .from('discounts')
+        .select('*')
+        .eq('code', cleanCode)
+        .eq('is_active', true)
+        .maybeSingle();
 
-    const currentSubtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+      if (error || !data) {
+        return { success: false, message: 'Kode kupon tidak valid atau sudah kadaluarsa.' };
+      }
 
-    if (found.minPurchase && currentSubtotal < found.minPurchase) {
-      return {
-        success: false,
-        message: `Minimal belanja Rp ${found.minPurchase.toLocaleString('id-ID')} untuk pakai kupon ini.`,
+      const currentSubtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+
+      if (data.min_order_amount && currentSubtotal < Number(data.min_order_amount)) {
+        return {
+          success: false,
+          message: `Minimal belanja Rp ${Number(data.min_order_amount).toLocaleString('id-ID')} untuk pakai kupon ini.`,
+        };
+      }
+
+      const loadedCoupon: Coupon = {
+        id: data.id,
+        code: data.code,
+        discountType: data.type === 'percentage' ? 'percentage' : 'fixed',
+        discountValue: Number(data.value),
+        minPurchase: Number(data.min_order_amount || 0),
+        maxDiscount: data.max_discount_amount ? Number(data.max_discount_amount) : undefined,
+        isActive: data.is_active,
       };
-    }
 
-    setAppliedCoupon(found);
-    return { success: true, message: `Kupon ${found.code} berhasil diterapkan!` };
+      setAppliedCoupon(loadedCoupon);
+      return { success: true, message: `Kupon ${loadedCoupon.code} berhasil diterapkan!` };
+    } catch {
+      return { success: false, message: 'Gagal mengecek kupon.' };
+    }
   };
 
   const removeCoupon = () => {

@@ -54,20 +54,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updated_at: now
       };
     }
-    // Default to admin for seamless first load if demo preference is set, or null if logged out
-    if (saved === 'logged_out') {
+    // If logged out or no preference saved, do not auto-login
+    if (!saved || saved === 'logged_out') {
       return null;
     }
-    // If first time visit with no preference, give cashier default so POS works right away
-    return {
-      id: 'cashier-user-id',
-      email: 'kasir@kasirpintar.id',
-      full_name: 'Kasir Toko (Shift 1)',
-      role: 'cashier',
-      store_id: 'default-store',
-      created_at: now,
-      updated_at: now
-    };
+    return null;
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
 

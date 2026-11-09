@@ -9,10 +9,13 @@ import {
   ArrowUpDown,
   CheckCircle,
   XCircle,
-  Truck
+  Truck,
+  Edit2,
+  Trash2
 } from 'lucide-react';
 import { supabase } from '../config/supabase';
 import { Product } from '../types';
+import ProductFormModal from '../components/inventory/ProductFormModal';
 
 interface InventoryItem extends Product {
   daily_sales_velocity?: number;
@@ -28,6 +31,10 @@ export default function Inventory() {
   const [reorderAmountMap, setReorderAmountMap] = useState<Record<string, number>>({});
   const [isSubmittingReorder, setIsSubmittingReorder] = useState<boolean>(false);
   const [reorderStatusMsg, setReorderStatusMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  // Modal State (#7 & #8 CRUD Produk)
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   const fetchInventory = useCallback(async () => {
     try {
@@ -232,6 +239,16 @@ export default function Inventory() {
           <p className="text-sm text-slate-500">Real-time depletion alerts and automated stock controls.</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setEditingProduct(null);
+              setIsModalOpen(true);
+            }}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-600 text-sm font-bold text-white hover:bg-emerald-700 transition shadow-xs"
+          >
+            <Plus className="w-4 h-4" />
+            Tambah Produk
+          </button>
           <button
             onClick={() => fetchInventory()}
             className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
@@ -443,27 +460,29 @@ export default function Inventory() {
                         {getDepletionBadge(item.days_until_depletion)}
                       </td>
                       <td className="py-3.5 px-4 text-right">
-                        <div className="inline-flex items-center gap-2 justify-end">
-                          <input
-                            type="number"
-                            min="1"
-                            value={reorderAmountMap[item.id] || 10}
-                            onChange={(e) =>
-                              handleAmountChange(item.id, parseInt(e.target.value) || 1)
-                            }
-                            className="w-20 px-2 py-1 text-sm border border-slate-300 rounded-md text-right focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          />
+                        <div className="inline-flex items-center gap-1.5 justify-end">
                           <button
                             onClick={() => {
-                              toggleSelectItem(item.id);
-                              if (!selectedItems.has(item.id)) {
-                                executeBatchReorder();
+                              setEditingProduct(item);
+                              setIsModalOpen(true);
+                            }}
+                            className="p-1.5 rounded-md hover:bg-slate-100 text-slate-600 hover:text-emerald-600 transition"
+                            title="Edit Produk"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+
+                          <button
+                            onClick={async () => {
+                              if (confirm(`Hapus produk "${item.name}"?`)) {
+                                await supabase.from('products').delete().eq('id', item.id);
+                                fetchInventory();
                               }
                             }}
-                            className="p-1.5 rounded-md hover:bg-slate-100 text-slate-600 hover:text-blue-600 transition"
-                            title="Order item"
+                            className="p-1.5 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-600 transition"
+                            title="Hapus Produk"
                           >
-                            <Truck className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -475,6 +494,13 @@ export default function Inventory() {
           </table>
         </div>
       </div>
+
+      <ProductFormModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        product={editingProduct}
+        onSaved={fetchInventory}
+      />
     </div>
   );
 }

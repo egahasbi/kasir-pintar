@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, LayoutGrid, ArrowLeft, ArrowRight } from 'lucide-react';
+import { ShoppingCart, LayoutGrid, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useStore } from '../context/StoreContext';
 import { BarcodeScanner } from '../components/pos/BarcodeScanner';
 import { PosCatalog } from '../components/pos/PosCatalog';
 import { PosCartItems } from '../components/pos/PosCartItems';
@@ -11,7 +12,8 @@ import { ReceiptModal, ReceiptData } from '../components/pos/ReceiptModal';
 import { Product } from '../types';
 
 export default function PosPage() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
+  const { settings } = useStore();
   const {
     cart,
     addToCart,
@@ -28,6 +30,7 @@ export default function PosPage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
@@ -73,8 +76,10 @@ export default function PosPage() {
     return matchSearch && matchCat;
   });
 
-  const handleCheckout = () => {
-    if (cart.length === 0) return;
+  const handleCheckout = async () => {
+    if (cart.length === 0 || isProcessingCheckout) return;
+
+    setIsProcessingCheckout(true);
 
     const invoiceNum = `INV-${Date.now().toString().slice(-6)}`;
     const effectiveCash = paymentMethod === 'CASH' ? Math.max(cashGiven, grandTotal) : grandTotal;
@@ -85,9 +90,9 @@ export default function PosPage() {
       invoiceNumber: invoiceNum,
       timestamp: new Date().toISOString(),
       cashierName: profile?.full_name || 'Kasir Toko',
-      storeName: 'Kasir Pintar AI',
-      storeAddress: 'Jl. Bisnis Pintar No. 8',
-      storePhone: '0812-3456-7890',
+      storeName: settings.store_name,
+      storeAddress: settings.store_address,
+      storePhone: settings.store_phone,
       items: cart.map((i) => ({
         id: i.product.id,
         name: i.product.name,
@@ -107,7 +112,7 @@ export default function PosPage() {
             },
           ]
         : [],
-      taxRate: 0.11,
+      taxRate: settings.tax_rate,
       taxAmount,
       total: grandTotal,
       paymentMethod,
@@ -115,10 +120,68 @@ export default function PosPage() {
       change: change > 0 ? change : 0,
     };
 
-    setCompletedReceiptData(receipt);
-    setShowReceipt(true);
-    clearCart();
-    setCashGiven(0);
+    try {
+      // 1. Simpan Transaksi ke Supabase (Database riil)
+      const mappedMethod = paymentMethod.toLowerCase();
+      const cashierUuid = user?.id || profile?.id;
+
+      // Filter: hanya item ber-UUID asli yang link ke DB products
+      const isUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+      const { data: createdTx, error: txErr } = await supabase
+        .from('transactions')
+        .insert({
+          invoice_number: invoiceNum,
+          cashier_id: cashierUuid && isUuid(cashierUuid) ? cashierUuid : null,
+          total_amount: subtotal,
+          tax_amount: taxAmount,
+          discount_amount: totalDiscount,
+          final_amount: grandTotal,
+          payment_method: mappedMethod,
+          payment_status: 'completed',
+          amount_paid: effectiveCash,
+          change_given: change > 0 ? change : 0,
+        })
+        .select()
+        .single();
+
+      if (!txErr && createdTx) {
+        receipt.transactionId = createdTx.id;
+
+        // 2. Insert transaction items
+        const validDbItems = cart.filter((i) => isUuid(i.product.id));
+        if (validDbItems.length > 0) {
+          const itemsPayload = validDbItems.map((i) => ({
+            transaction_id: createdTx.id,
+            product_id: i.product.id,
+            quantity: i.quantity,
+            unit_cost: i.product.cost_price || 0,
+            unit_price: i.product.price,
+            subtotal: i.product.price * i.quantity,
+          }));
+
+          await supabase.from('transaction_items').insert(itemsPayload);
+
+          // 3. Kurangi stok produk langsung di tabel products
+          for (const item of validDbItems) {
+            const nextStock = Math.max(0, item.product.stock - item.quantity);
+            await supabase
+              .from('products')
+              .update({ stock: nextStock, updated_at: new Date().toISOString() })
+              .eq('id', item.product.id);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('DB transaction sync warning:', err);
+    } finally {
+      setIsProcessingCheckout(false);
+      setCompletedReceiptData(receipt);
+      setShowReceipt(true);
+      clearCart();
+      setCashGiven(0);
+      fetchProducts(); // Refresh stok produk lokal
+    }
   };
 
   return (
@@ -222,7 +285,7 @@ export default function PosPage() {
             setPaymentMethod={setPaymentMethod}
             cashGiven={cashGiven}
             setCashGiven={setCashGiven}
-            disabled={cart.length === 0}
+            disabled={cart.length === 0 || isProcessingCheckout}
             onCheckout={handleCheckout}
           />
         </div>
