@@ -11,6 +11,8 @@ interface PosPaymentFooterProps {
   setPaymentMethod: (m: 'CASH' | 'QRIS' | 'DEBIT') => void;
   cashGiven: number;
   setCashGiven: (n: number) => void;
+  customerName?: string;
+  setCustomerName?: (s: string) => void;
   disabled: boolean;
   onCheckout: () => void;
 }
@@ -25,6 +27,8 @@ export function PosPaymentFooter({
   setPaymentMethod,
   cashGiven,
   setCashGiven,
+  customerName = '',
+  setCustomerName,
   disabled,
   onCheckout
 }: PosPaymentFooterProps) {
@@ -127,6 +131,19 @@ export function PosPaymentFooter({
               <span>{formatIDR(cashGiven - grandTotal)}</span>
             </div>
           )}
+        </div>
+      )}
+
+      {setCustomerName && (
+        <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
+          <label className="text-[11px] text-slate-500 whitespace-nowrap">Pelanggan:</label>
+          <input
+            type="text"
+            value={customerName}
+            onChange={(e) => setCustomerName(e.target.value)}
+            placeholder="Nama pelanggan (opsional)..."
+            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+          />
         </div>
       )}
 

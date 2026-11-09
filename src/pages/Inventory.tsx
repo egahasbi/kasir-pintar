@@ -11,11 +11,15 @@ import {
   XCircle,
   Truck,
   Edit2,
-  Trash2
+  Trash2,
+  Download,
+  Sliders
 } from 'lucide-react';
 import { supabase } from '../config/supabase';
 import { Product } from '../types';
 import ProductFormModal from '../components/inventory/ProductFormModal';
+import StockAdjustmentModal from '../components/inventory/StockAdjustmentModal';
+import { exportToCsv } from '../lib/exportCsv';
 
 interface InventoryItem extends Product {
   daily_sales_velocity?: number;
@@ -35,6 +39,20 @@ export default function Inventory() {
   // Modal State (#7 & #8 CRUD Produk)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [adjustingProduct, setAdjustingProduct] = useState<Product | null>(null);
+
+  const handleExportStockCsv = () => {
+    const rows = items.map((i) => ({
+      Nama: i.name,
+      SKU: i.sku || '',
+      Barcode: i.barcode || '',
+      HargaModal: i.cost_price || 0,
+      HargaJual: i.price || i.selling_price || 0,
+      Stok: i.stock,
+      BatasMin: i.min_stock || i.min_stock_alert || 5,
+    }));
+    exportToCsv(`Inventori_Stok_${Date.now()}`, rows);
+  };
 
   const fetchInventory = useCallback(async () => {
     try {
@@ -250,6 +268,13 @@ export default function Inventory() {
             Tambah Produk
           </button>
           <button
+            onClick={handleExportStockCsv}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+          >
+            <Download className="w-4 h-4" />
+            Unduh CSV
+          </button>
+          <button
             onClick={() => fetchInventory()}
             className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
           >
@@ -462,6 +487,14 @@ export default function Inventory() {
                       <td className="py-3.5 px-4 text-right">
                         <div className="inline-flex items-center gap-1.5 justify-end">
                           <button
+                            onClick={() => setAdjustingProduct(item)}
+                            className="p-1.5 rounded-md hover:bg-slate-100 text-slate-600 hover:text-blue-600 transition"
+                            title="Koreksi Stok (Opname)"
+                          >
+                            <Sliders className="w-4 h-4" />
+                          </button>
+
+                          <button
                             onClick={() => {
                               setEditingProduct(item);
                               setIsModalOpen(true);
@@ -499,6 +532,13 @@ export default function Inventory() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         product={editingProduct}
+        onSaved={fetchInventory}
+      />
+
+      <StockAdjustmentModal
+        isOpen={!!adjustingProduct}
+        onClose={() => setAdjustingProduct(null)}
+        product={adjustingProduct}
         onSaved={fetchInventory}
       />
     </div>

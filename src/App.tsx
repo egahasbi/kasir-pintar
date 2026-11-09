@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -10,7 +10,9 @@ import {
   ShieldCheck,
   Settings as SettingsIcon,
   Tag,
-  Users as UsersIcon
+  Users as UsersIcon,
+  Receipt,
+  BarChart3
 } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
@@ -19,15 +21,33 @@ import Login from './pages/Login';
 import Settings from './pages/Settings';
 import Discounts from './pages/Discounts';
 import Users from './pages/Users';
+import Transactions from './pages/Transactions';
+import Reports from './pages/Reports';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { StoreProvider } from './context/StoreContext';
+import { supabase } from './lib/supabaseClient';
 
 function Navigation() {
   const location = useLocation();
   const { isAdmin, isCashier, isAuthenticated, signOut, switchMockRole } = useAuth();
+  const [lowStockCount, setLowStockCount] = useState<number>(0);
 
   const isLoginPage = location.pathname === '/login';
+
+  useEffect(() => {
+    if (isAuthenticated && isAdmin) {
+      supabase
+        .from('products')
+        .select('stock, min_stock_alert')
+        .then(({ data }) => {
+          if (data) {
+            const count = data.filter((p) => p.stock <= (p.min_stock_alert || 5)).length;
+            setLowStockCount(count);
+          }
+        });
+    }
+  }, [isAuthenticated, isAdmin, location.pathname]);
 
   return (
     <>
@@ -58,12 +78,33 @@ function Navigation() {
                     </Link>
                     <Link
                       to="/inventory"
-                      className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition ${
+                      className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition relative ${
                         location.pathname === '/inventory' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                       }`}
                     >
                       <Package className="w-4 h-4" />
-                      Inventaris
+                      <span>Inventaris</span>
+                      {lowStockCount > 0 && (
+                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                      )}
+                    </Link>
+                    <Link
+                      to="/transactions"
+                      className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition ${
+                        location.pathname === '/transactions' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      }`}
+                    >
+                      <Receipt className="w-4 h-4" />
+                      Transaksi
+                    </Link>
+                    <Link
+                      to="/reports"
+                      className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition ${
+                        location.pathname === '/reports' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      }`}
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                      Laporan
                     </Link>
                     <Link
                       to="/discounts"
@@ -183,7 +224,7 @@ function Navigation() {
             <>
               <Link
                 to="/"
-                className={`flex flex-col items-center py-1 px-2 rounded-xl text-[10px] font-bold ${
+                className={`flex flex-col items-center py-1 px-1.5 rounded-xl text-[10px] font-bold ${
                   location.pathname === '/' ? 'text-emerald-600' : 'text-slate-500'
                 }`}
               >
@@ -191,17 +232,8 @@ function Navigation() {
                 <span>Dashboard</span>
               </Link>
               <Link
-                to="/inventory"
-                className={`flex flex-col items-center py-1 px-2 rounded-xl text-[10px] font-bold ${
-                  location.pathname === '/inventory' ? 'text-emerald-600' : 'text-slate-500'
-                }`}
-              >
-                <Package className="w-4 h-4 mb-0.5" />
-                <span>Inventori</span>
-              </Link>
-              <Link
                 to="/pos"
-                className={`flex flex-col items-center py-1 px-2 rounded-xl text-[10px] font-bold ${
+                className={`flex flex-col items-center py-1 px-1.5 rounded-xl text-[10px] font-bold ${
                   location.pathname === '/pos' ? 'text-emerald-600' : 'text-slate-500'
                 }`}
               >
@@ -209,29 +241,50 @@ function Navigation() {
                 <span>Kasir</span>
               </Link>
               <Link
+                to="/transactions"
+                className={`flex flex-col items-center py-1 px-1.5 rounded-xl text-[10px] font-bold ${
+                  location.pathname === '/transactions' ? 'text-emerald-600' : 'text-slate-500'
+                }`}
+              >
+                <Receipt className="w-4 h-4 mb-0.5" />
+                <span>Riwayat</span>
+              </Link>
+              <Link
+                to="/reports"
+                className={`flex flex-col items-center py-1 px-1.5 rounded-xl text-[10px] font-bold ${
+                  location.pathname === '/reports' ? 'text-emerald-600' : 'text-slate-500'
+                }`}
+              >
+                <BarChart3 className="w-4 h-4 mb-0.5" />
+                <span>Laporan</span>
+              </Link>
+              <Link
+                to="/inventory"
+                className={`flex flex-col items-center py-1 px-1.5 rounded-xl text-[10px] font-bold relative ${
+                  location.pathname === '/inventory' ? 'text-emerald-600' : 'text-slate-500'
+                }`}
+              >
+                <Package className="w-4 h-4 mb-0.5" />
+                <span>Stok</span>
+                {lowStockCount > 0 && (
+                  <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                )}
+              </Link>
+              <Link
                 to="/settings"
-                className={`flex flex-col items-center py-1 px-2 rounded-xl text-[10px] font-bold ${
+                className={`flex flex-col items-center py-1 px-1.5 rounded-xl text-[10px] font-bold ${
                   location.pathname === '/settings' ? 'text-emerald-600' : 'text-slate-500'
                 }`}
               >
                 <SettingsIcon className="w-4 h-4 mb-0.5" />
                 <span>Toko</span>
               </Link>
-              <Link
-                to="/login"
-                className={`flex flex-col items-center py-1 px-2 rounded-xl text-[10px] font-bold ${
-                  location.pathname === '/login' ? 'text-emerald-600' : 'text-slate-500'
-                }`}
-              >
-                <User className="w-4 h-4 mb-0.5" />
-                <span>Akun</span>
-              </Link>
             </>
           ) : (
             <>
               <Link
                 to="/pos"
-                className={`flex flex-col items-center py-1.5 px-8 rounded-xl text-xs font-bold ${
+                className={`flex flex-col items-center py-1.5 px-6 rounded-xl text-xs font-bold ${
                   location.pathname === '/pos' ? 'text-emerald-600' : 'text-slate-500'
                 }`}
               >
@@ -239,13 +292,22 @@ function Navigation() {
                 <span>Kasir POS</span>
               </Link>
               <Link
+                to="/transactions"
+                className={`flex flex-col items-center py-1.5 px-6 rounded-xl text-xs font-bold ${
+                  location.pathname === '/transactions' ? 'text-emerald-600' : 'text-slate-500'
+                }`}
+              >
+                <Receipt className="w-5 h-5 mb-0.5" />
+                <span>Riwayat</span>
+              </Link>
+              <Link
                 to="/login"
-                className={`flex flex-col items-center py-1.5 px-8 rounded-xl text-xs font-bold ${
+                className={`flex flex-col items-center py-1.5 px-6 rounded-xl text-xs font-bold ${
                   location.pathname === '/login' ? 'text-emerald-600' : 'text-slate-500'
                 }`}
               >
                 <User className="w-5 h-5 mb-0.5" />
-                <span>Ganti Akun</span>
+                <span>Akun</span>
               </Link>
             </>
           )}
@@ -289,6 +351,8 @@ export default function App() {
                 <Routes>
                   <Route path="/" element={<AuthGuard adminOnly><Dashboard /></AuthGuard>} />
                   <Route path="/inventory" element={<AuthGuard adminOnly><Inventory /></AuthGuard>} />
+                  <Route path="/transactions" element={<AuthGuard><Transactions /></AuthGuard>} />
+                  <Route path="/reports" element={<AuthGuard adminOnly><Reports /></AuthGuard>} />
                   <Route path="/discounts" element={<AuthGuard adminOnly><Discounts /></AuthGuard>} />
                   <Route path="/users" element={<AuthGuard adminOnly><Users /></AuthGuard>} />
                   <Route path="/settings" element={<AuthGuard adminOnly><Settings /></AuthGuard>} />

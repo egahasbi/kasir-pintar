@@ -39,6 +39,7 @@ export default function PosPage() {
 
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'QRIS' | 'DEBIT'>('CASH');
   const [cashGiven, setCashGiven] = useState<number>(0);
+  const [customerName, setCustomerName] = useState<string>('');
   const [showReceipt, setShowReceipt] = useState(false);
   const [completedReceiptData, setCompletedReceiptData] = useState<ReceiptData | null>(null);
 
@@ -90,6 +91,7 @@ export default function PosPage() {
       invoiceNumber: invoiceNum,
       timestamp: new Date().toISOString(),
       cashierName: profile?.full_name || 'Kasir Toko',
+      customerName: customerName.trim() || undefined,
       storeName: settings.store_name,
       storeAddress: settings.store_address,
       storePhone: settings.store_phone,
@@ -133,6 +135,7 @@ export default function PosPage() {
         .insert({
           invoice_number: invoiceNum,
           cashier_id: cashierUuid && isUuid(cashierUuid) ? cashierUuid : null,
+          customer_name: customerName.trim() || null,
           total_amount: subtotal,
           tax_amount: taxAmount,
           discount_amount: totalDiscount,
@@ -180,6 +183,7 @@ export default function PosPage() {
       setShowReceipt(true);
       clearCart();
       setCashGiven(0);
+      setCustomerName('');
       fetchProducts(); // Refresh stok produk lokal
     }
   };
@@ -285,6 +289,8 @@ export default function PosPage() {
             setPaymentMethod={setPaymentMethod}
             cashGiven={cashGiven}
             setCashGiven={setCashGiven}
+            customerName={customerName}
+            setCustomerName={setCustomerName}
             disabled={cart.length === 0 || isProcessingCheckout}
             onCheckout={handleCheckout}
           />
