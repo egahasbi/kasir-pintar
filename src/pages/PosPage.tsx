@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ShoppingCart, LayoutGrid, ArrowLeft, ArrowRight } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -30,10 +31,15 @@ export default function PosPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
+  // Mobile View Toggle: 'catalog' | 'cart' (#3 Mobile friendly)
+  const [mobileTab, setMobileTab] = useState<'catalog' | 'cart'>('catalog');
+
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'QRIS' | 'DEBIT'>('CASH');
   const [cashGiven, setCashGiven] = useState<number>(0);
   const [showReceipt, setShowReceipt] = useState(false);
   const [completedReceiptData, setCompletedReceiptData] = useState<ReceiptData | null>(null);
+
+  const totalCartItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   useEffect(() => {
     fetchProducts();
@@ -116,48 +122,136 @@ export default function PosPage() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[calc(100vh-6rem)]">
-      {/* Kolom Katalog POS */}
-      <div className="lg:col-span-7 flex flex-col space-y-4">
-        <BarcodeScanner products={products} />
-        <PosCatalog
-          products={filteredProducts}
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          onAddToCart={(p) => addToCart(p, 1)}
-          formatIDR={formatIDR}
-          loading={loading}
-        />
+    <div className="flex flex-col space-y-3 pb-20 lg:pb-0">
+      {/* Mobile Segmented Nav (Hanya di layar HP / < lg) */}
+      <div className="lg:hidden flex bg-white p-1 rounded-2xl border border-slate-200 shadow-xs">
+        <button
+          type="button"
+          onClick={() => setMobileTab('catalog')}
+          className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition ${
+            mobileTab === 'catalog'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <LayoutGrid className="w-4 h-4" />
+          <span>Katalog & Scan</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMobileTab('cart')}
+          className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition relative ${
+            mobileTab === 'cart'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <ShoppingCart className="w-4 h-4" />
+          <span>Keranjang</span>
+          {totalCartItemsCount > 0 && (
+            <span
+              className={`px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                mobileTab === 'cart' ? 'bg-white text-emerald-700' : 'bg-emerald-600 text-white'
+              }`}
+            >
+              {totalCartItemsCount}
+            </span>
+          )}
+        </button>
       </div>
 
-      {/* Kolom Keranjang Kasir */}
-      <div className="lg:col-span-5 flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden h-[calc(100vh-6rem)]">
-        <PosCartItems
-          cart={cart}
-          clearCart={clearCart}
-          updateQuantity={updateQuantity}
-          formatIDR={formatIDR}
-          subtotal={subtotal}
-          appliedCoupon={appliedCoupon}
-          applyCoupon={applyCoupon}
-        />
-        <PosPaymentFooter
-          subtotal={subtotal}
-          totalDiscount={totalDiscount}
-          taxAmount={taxAmount}
-          grandTotal={grandTotal}
-          formatIDR={formatIDR}
-          paymentMethod={paymentMethod}
-          setPaymentMethod={setPaymentMethod}
-          cashGiven={cashGiven}
-          setCashGiven={setCashGiven}
-          disabled={cart.length === 0}
-          onCheckout={handleCheckout}
-        />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 min-h-[calc(100vh-7rem)]">
+        {/* Kolom Katalog POS (Desktop selalu tampil, Mobile sesuai tab) */}
+        <div
+          className={`lg:col-span-7 flex flex-col space-y-3.5 ${
+            mobileTab === 'catalog' ? 'block' : 'hidden lg:flex'
+          }`}
+        >
+          <BarcodeScanner products={products} />
+          <PosCatalog
+            products={filteredProducts}
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            onAddToCart={(p) => addToCart(p, 1)}
+            formatIDR={formatIDR}
+            loading={loading}
+          />
+        </div>
+
+        {/* Kolom Keranjang Kasir (Desktop selalu tampil, Mobile sesuai tab) */}
+        <div
+          className={`lg:col-span-5 flex flex-col bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden lg:h-[calc(100vh-7rem)] ${
+            mobileTab === 'cart' ? 'block' : 'hidden lg:flex'
+          }`}
+        >
+          {/* Mobile Back Button to Catalog */}
+          <div className="lg:hidden p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setMobileTab('catalog')}
+              className="text-xs font-semibold text-emerald-700 flex items-center gap-1 hover:underline"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Tambah Barang Lainnya</span>
+            </button>
+            <span className="text-xs font-bold text-slate-500">
+              {totalCartItemsCount} Item
+            </span>
+          </div>
+
+          <PosCartItems
+            cart={cart}
+            clearCart={clearCart}
+            updateQuantity={updateQuantity}
+            formatIDR={formatIDR}
+            subtotal={subtotal}
+            appliedCoupon={appliedCoupon}
+            applyCoupon={applyCoupon}
+          />
+          <PosPaymentFooter
+            subtotal={subtotal}
+            totalDiscount={totalDiscount}
+            taxAmount={taxAmount}
+            grandTotal={grandTotal}
+            formatIDR={formatIDR}
+            paymentMethod={paymentMethod}
+            setPaymentMethod={setPaymentMethod}
+            cashGiven={cashGiven}
+            setCashGiven={setCashGiven}
+            disabled={cart.length === 0}
+            onCheckout={handleCheckout}
+          />
+        </div>
       </div>
+
+      {/* Floating Checkout Bar for Mobile when browsing catalog */}
+      {mobileTab === 'catalog' && totalCartItemsCount > 0 && (
+        <div className="lg:hidden fixed bottom-3 left-3 right-3 z-30">
+          <button
+            type="button"
+            onClick={() => setMobileTab('cart')}
+            className="w-full bg-slate-900 text-white p-3.5 rounded-2xl shadow-xl flex items-center justify-between border border-slate-800 active:scale-[0.98] transition"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold text-xs">
+                {totalCartItemsCount}
+              </div>
+              <div className="text-left">
+                <div className="text-[11px] text-slate-300">Total Belanja</div>
+                <div className="font-extrabold text-sm text-emerald-400">{formatIDR(grandTotal)}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-xs font-bold bg-emerald-600 px-3 py-2 rounded-xl">
+              <span>Buka Keranjang</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </button>
+        </div>
+      )}
 
       {completedReceiptData && (
         <ReceiptModal

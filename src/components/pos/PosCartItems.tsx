@@ -59,23 +59,27 @@ export function PosCartItems({
                 <div className="text-[11px] text-slate-500">{formatIDR(item.product.price)}</div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <div className="flex items-center border border-slate-200 rounded-lg bg-white overflow-hidden shadow-xs">
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center border border-slate-200 rounded-xl bg-white overflow-hidden shadow-xs">
                   <button
+                    type="button"
                     onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                    className="p-1 hover:bg-slate-100 text-slate-600"
+                    className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 active:bg-slate-200 text-slate-700 transition touch-manipulation"
+                    aria-label="Kurang"
                   >
-                    <Minus className="w-3.5 h-3.5" />
+                    <Minus className="w-4 h-4" />
                   </button>
-                  <span className="w-7 text-center text-xs font-bold text-slate-800">{item.quantity}</span>
+                  <span className="w-8 text-center text-xs font-bold text-slate-900">{item.quantity}</span>
                   <button
+                    type="button"
                     onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                    className="p-1 hover:bg-slate-100 text-slate-600"
+                    className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 active:bg-slate-200 text-slate-700 transition touch-manipulation"
+                    aria-label="Tambah"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-4 h-4" />
                   </button>
                 </div>
-                <div className="text-xs font-bold text-slate-900 w-16 text-right">
+                <div className="text-xs font-extrabold text-slate-900 min-w-16 text-right">
                   {formatIDR(item.product.price * item.quantity)}
                 </div>
               </div>

@@ -11,6 +11,7 @@ interface AuthContextType {
   token: string | null;
   isAdmin: boolean;
   isCashier: boolean;
+  isAuthenticated: boolean;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -31,22 +32,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<UserProfile | null>(() => {
     const saved = localStorage.getItem('kasir_mock_role');
     const now = new Date().toISOString();
-    if (saved === 'admin' || saved === 'cashier' || saved === 'owner' || saved === 'manager') {
+    if (saved === 'admin' || saved === 'owner' || saved === 'manager') {
       return {
-        id: 'mock-user-id',
-        email: saved === 'admin' ? 'admin@kasirpintar.id' : 'kasir@kasirpintar.id',
-        full_name: saved === 'admin' ? 'Administrator' : 'Kasir Utama',
+        id: 'admin-user-id',
+        email: 'admin@kasirpintar.id',
+        full_name: 'Administrator Toko',
         role: saved as UserRole,
         store_id: 'default-store',
         created_at: now,
         updated_at: now
       };
     }
+    if (saved === 'cashier') {
+      return {
+        id: 'cashier-user-id',
+        email: 'kasir@kasirpintar.id',
+        full_name: 'Kasir Toko (Shift 1)',
+        role: 'cashier',
+        store_id: 'default-store',
+        created_at: now,
+        updated_at: now
+      };
+    }
+    // Default to admin for seamless first load if demo preference is set, or null if logged out
+    if (saved === 'logged_out') {
+      return null;
+    }
+    // If first time visit with no preference, give cashier default so POS works right away
     return {
-      id: 'mock-user-id',
-      email: 'admin@kasirpintar.id',
-      full_name: 'Administrator Toko',
-      role: 'admin',
+      id: 'cashier-user-id',
+      email: 'kasir@kasirpintar.id',
+      full_name: 'Kasir Toko (Shift 1)',
+      role: 'cashier',
       store_id: 'default-store',
       created_at: now,
       updated_at: now
@@ -153,8 +170,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     setIsLoading(true);
-    await supabase.auth.signOut();
-    localStorage.removeItem('kasir_mock_role');
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('SignOut error:', e);
+    }
+    localStorage.setItem('kasir_mock_role', 'logged_out');
     setSession(null);
     setUser(null);
     setProfile(null);
@@ -164,6 +185,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const role: UserRole | null = profile?.role ?? null;
   const isAdmin = role === 'admin' || role === 'owner' || role === 'manager';
   const isCashier = role === 'cashier' || isAdmin;
+  const isAuthenticated = !!profile || !!session;
   const token = session?.access_token ?? null;
 
   const value = useMemo(
@@ -175,13 +197,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       token,
       isAdmin,
       isCashier,
+      isAuthenticated,
       isLoading,
       signIn,
       signOut,
       refreshProfile,
       switchMockRole,
     }),
-    [session, user, profile, role, token, isAdmin, isCashier, isLoading]
+    [session, user, profile, role, token, isAdmin, isCashier, isAuthenticated, isLoading]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -88,22 +88,52 @@ export function PosPaymentFooter({
       </div>
 
       {paymentMethod === 'CASH' && (
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-slate-500 whitespace-nowrap">Uang Diterima:</label>
-          <input
-            type="number"
-            value={cashGiven || ''}
-            onChange={(e) => setCashGiven(Number(e.target.value))}
-            placeholder={grandTotal.toString()}
-            className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-          />
+        <div className="space-y-2 pt-1">
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-slate-600 whitespace-nowrap">Uang Tunai:</label>
+            <input
+              type="number"
+              value={cashGiven || ''}
+              onChange={(e) => setCashGiven(Number(e.target.value))}
+              placeholder={grandTotal.toString()}
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white"
+            />
+          </div>
+
+          {/* Quick Cash Chips */}
+          <div className="flex gap-1.5 overflow-x-auto pb-0.5 text-[11px]">
+            <button
+              type="button"
+              onClick={() => setCashGiven(grandTotal)}
+              className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 font-bold border border-emerald-200 hover:bg-emerald-100 whitespace-nowrap"
+            >
+              Uang Pas
+            </button>
+            {[20000, 50000, 100000].map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => setCashGiven(preset)}
+                className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 whitespace-nowrap"
+              >
+                {preset / 1000}k
+              </button>
+            ))}
+          </div>
+
+          {cashGiven > grandTotal && (
+            <div className="flex justify-between text-xs font-bold text-emerald-700 bg-emerald-50/60 p-2 rounded-lg border border-emerald-100">
+              <span>Kembalian:</span>
+              <span>{formatIDR(cashGiven - grandTotal)}</span>
+            </div>
+          )}
         </div>
       )}
 
       <button
         disabled={disabled}
         onClick={onCheckout}
-        className="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 disabled:opacity-50 transition shadow-md flex items-center justify-center gap-2"
+        className="w-full py-3.5 bg-emerald-600 text-white rounded-xl font-bold text-sm sm:text-base hover:bg-emerald-700 active:scale-98 disabled:opacity-50 transition shadow-md flex items-center justify-center gap-2 touch-manipulation"
       >
         <Receipt className="w-4 h-4" />
         Bayar {formatIDR(grandTotal)}
