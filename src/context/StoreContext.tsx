@@ -9,6 +9,9 @@ export interface StoreSettings {
   tax_rate: number;
   currency: string;
   receipt_footer: string;
+  subscription_plan?: 'trial' | 'pro' | 'business';
+  subscription_status?: 'active' | 'expired';
+  subscription_expires_at?: string;
 }
 
 interface StoreContextType {

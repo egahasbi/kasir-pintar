@@ -53,37 +53,6 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleShareWhatsApp = () => {
-    const lines = [
-      `*STRUK PEMBAYARAN - ${receiptData.storeName.toUpperCase()}*`,
-      `${receiptData.storeAddress || ''}`,
-      `Telp: ${receiptData.storePhone || '-'}`,
-      `--------------------------------`,
-      `No. Invoice: ${receiptData.invoiceNumber}`,
-      `Tanggal: ${new Date(receiptData.timestamp).toLocaleString('id-ID')}`,
-      `Kasir: ${receiptData.cashierName}`,
-      receiptData.customerName ? `Pelanggan: ${receiptData.customerName}` : '',
-      `--------------------------------`,
-      ...receiptData.items.map(
-        (it) => `${it.name} x${it.quantity} = ${formatRupiah(it.subtotal)}`
-      ),
-      `--------------------------------`,
-      `Subtotal: ${formatRupiah(receiptData.subtotal)}`,
-      totalDiscount > 0 ? `Diskon: -${formatRupiah(totalDiscount)}` : '',
-      `PPN: ${formatRupiah(receiptData.taxAmount)}`,
-      `*TOTAL: ${formatRupiah(receiptData.total)}*`,
-      `Metode Bayar: ${receiptData.paymentMethod}`,
-      `Bayar: ${formatRupiah(receiptData.amountPaid)}`,
-      receiptData.change > 0 ? `Kembalian: ${formatRupiah(receiptData.change)}` : '',
-      `--------------------------------`,
-      `Terima kasih telah berbelanja!`,
-      `Powered by WECASH`,
-    ].filter(Boolean);
-
-    const message = encodeURIComponent(lines.join('\n'));
-    window.open(`https://wa.me/?text=${message}`, '_blank');
-  };
-
   const handlePrint = () => {
     window.print();
   };
@@ -281,25 +250,18 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2 px-6 py-4 border-t border-gray-200 bg-gray-50 print:hidden">
+        <div className="flex items-center gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50 print:hidden">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 px-3 rounded-xl border border-gray-300 bg-white text-gray-700 text-xs font-semibold hover:bg-gray-100 transition-colors"
+            className="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 bg-white text-gray-700 text-xs font-semibold hover:bg-gray-100 transition-colors"
           >
             Tutup
           </button>
           <button
             type="button"
-            onClick={handleShareWhatsApp}
-            className="flex-1 py-2.5 px-3 rounded-xl bg-green-600 text-white text-xs font-bold hover:bg-green-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
-          >
-            <span>Kirim WA</span>
-          </button>
-          <button
-            type="button"
             onClick={handlePrint}
-            className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-700 text-white text-xs font-bold hover:bg-emerald-800 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+            className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors flex items-center justify-center gap-2 shadow-sm"
           >
             <svg
               className="w-4 h-4"
@@ -312,7 +274,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
             >
               <path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
             </svg>
-            <span>Cetak</span>
+            <span>Cetak Struk Thermal</span>
           </button>
         </div>
       </div>

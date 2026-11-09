@@ -23,6 +23,9 @@ import Discounts from './pages/Discounts';
 import Users from './pages/Users';
 import Transactions from './pages/Transactions';
 import Reports from './pages/Reports';
+import LandingPage from './pages/LandingPage';
+import Register from './pages/Register';
+import Billing from './pages/Billing';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { StoreProvider } from './context/StoreContext';
@@ -33,7 +36,7 @@ function Navigation() {
   const { isAdmin, isCashier, isAuthenticated, signOut, switchMockRole } = useAuth();
   const [lowStockCount, setLowStockCount] = useState<number>(0);
 
-  const isLoginPage = location.pathname === '/login';
+  const isPublicPage = location.pathname === '/' || location.pathname === '/login' || location.pathname === '/register';
 
   useEffect(() => {
     if (isAuthenticated && isAdmin) {
@@ -63,14 +66,25 @@ function Navigation() {
               </span>
             </Link>
 
+            {/* Public Landing Navigation Links */}
+            {!isAuthenticated && location.pathname === '/' && (
+              <nav className="hidden md:flex items-center gap-6 text-xs font-bold text-slate-600">
+                <a href="#fitur" className="hover:text-emerald-600 transition">Fitur</a>
+                <a href="#cara-kerja" className="hover:text-emerald-600 transition">Cara Kerja</a>
+                <a href="#harga" className="hover:text-emerald-600 transition">Harga</a>
+                <a href="#testimoni" className="hover:text-emerald-600 transition">Testimoni</a>
+                <a href="#faq" className="hover:text-emerald-600 transition">FAQ</a>
+              </nav>
+            )}
+
             {isAuthenticated && (
               <nav className="hidden md:flex items-center gap-1">
                 {isAdmin && (
                   <>
                     <Link
-                      to="/"
+                      to="/dashboard"
                       className={`px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition ${
-                        location.pathname === '/' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        location.pathname === '/dashboard' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                       }`}
                     >
                       <LayoutDashboard className="w-4 h-4" />
@@ -203,29 +217,34 @@ function Navigation() {
                 </button>
               </>
             ) : (
-              !isLoginPage && (
+              <div className="flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-1.5 shadow-sm"
+                  className="px-3 py-1.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition"
                 >
-                  <LogIn className="w-3.5 h-3.5" />
-                  <span>Masuk</span>
+                  Masuk
                 </Link>
-              )
+                <Link
+                  to="/register"
+                  className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition shadow-sm"
+                >
+                  Daftar
+                </Link>
+              </div>
             )}
           </div>
         </div>
       </header>
 
       {/* Mobile Bottom Navigation Bar (#3 Mobile UX) */}
-      {isAuthenticated && !isLoginPage && (
+      {isAuthenticated && !isPublicPage && (
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 flex items-center justify-around py-1.5 px-2 shadow-lg">
           {isAdmin ? (
             <>
               <Link
-                to="/"
+                to="/dashboard"
                 className={`flex flex-col items-center py-1 px-1.5 rounded-xl text-[10px] font-bold ${
-                  location.pathname === '/' ? 'text-emerald-600' : 'text-slate-500'
+                  location.pathname === '/dashboard' ? 'text-emerald-600' : 'text-slate-500'
                 }`}
               >
                 <LayoutDashboard className="w-4 h-4 mb-0.5" />
@@ -339,6 +358,14 @@ function AuthGuard({ children, adminOnly = false }: { children: React.ReactNode;
   return <>{children}</>;
 }
 
+function RootRoute() {
+  const { isAuthenticated, isAdmin } = useAuth();
+  if (isAuthenticated) {
+    return <Navigate to={isAdmin ? '/dashboard' : '/pos'} replace />;
+  }
+  return <LandingPage />;
+}
+
 export default function App() {
   return (
     <AuthProvider>
@@ -349,15 +376,18 @@ export default function App() {
               <Navigation />
               <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-20 md:pb-8">
                 <Routes>
-                  <Route path="/" element={<AuthGuard adminOnly><Dashboard /></AuthGuard>} />
+                  <Route path="/" element={<RootRoute />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/dashboard" element={<AuthGuard adminOnly><Dashboard /></AuthGuard>} />
                   <Route path="/inventory" element={<AuthGuard adminOnly><Inventory /></AuthGuard>} />
                   <Route path="/transactions" element={<AuthGuard><Transactions /></AuthGuard>} />
                   <Route path="/reports" element={<AuthGuard adminOnly><Reports /></AuthGuard>} />
                   <Route path="/discounts" element={<AuthGuard adminOnly><Discounts /></AuthGuard>} />
                   <Route path="/users" element={<AuthGuard adminOnly><Users /></AuthGuard>} />
                   <Route path="/settings" element={<AuthGuard adminOnly><Settings /></AuthGuard>} />
+                  <Route path="/billing" element={<AuthGuard adminOnly><Billing /></AuthGuard>} />
                   <Route path="/pos" element={<AuthGuard><PosPage /></AuthGuard>} />
-                  <Route path="/login" element={<Login />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </main>
