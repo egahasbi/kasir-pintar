@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, Plus, Minus, ShoppingCart, Tag } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingCart, Tag, AlertTriangle } from 'lucide-react';
 import { DiscountSelector } from './DiscountSelector';
 
 interface PosCartItemsProps {
@@ -22,6 +22,16 @@ export function PosCartItems({
   applyCoupon
 }: PosCartItemsProps) {
   const [isDiscountOpen, setIsDiscountOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<any | null>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+  const handleDecreaseQuantity = (item: any) => {
+    if (item.quantity <= 1) {
+      setItemToDelete(item);
+    } else {
+      updateQuantity(item.product.id, item.quantity - 1);
+    }
+  };
 
   return (
     <>
@@ -32,8 +42,9 @@ export function PosCartItems({
         </div>
         {cart.length > 0 && (
           <button
-            onClick={clearCart}
-            className="text-xs text-red-600 hover:underline flex items-center gap-1 font-medium"
+            type="button"
+            onClick={() => setShowClearConfirm(true)}
+            className="text-xs text-red-600 hover:text-red-700 hover:underline flex items-center gap-1 font-semibold transition"
           >
             <Trash2 className="w-3.5 h-3.5" />
             Kosongkan
@@ -63,7 +74,7 @@ export function PosCartItems({
                 <div className="flex items-center border border-slate-200 rounded-xl bg-white overflow-hidden shadow-xs">
                   <button
                     type="button"
-                    onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                    onClick={() => handleDecreaseQuantity(item)}
                     className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 active:bg-slate-200 text-slate-700 transition touch-manipulation"
                     aria-label="Kurang"
                   >
@@ -108,6 +119,78 @@ export function PosCartItems({
           }}
         />
       </div>
+
+      {/* #4 MODAL KONFIRMASI: Hapus Item saat Qty 1 */}
+      {itemToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 text-xs space-y-3 animate-fadeIn">
+            <div className="flex items-center gap-2 text-amber-800 font-bold text-sm">
+              <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700 shrink-0">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+              <h3>Hapus Barang dari Keranjang?</h3>
+            </div>
+            <p className="text-slate-600 leading-relaxed">
+              Jumlah barang saat ini 1. Mengurangi jumlah akan menghapus <strong className="text-slate-900 font-bold">"{itemToDelete?.product?.name}"</strong> dari keranjang transaksi. Lanjutkan?
+            </p>
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setItemToDelete(null)}
+                className="px-3.5 py-2 border border-slate-300 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  updateQuantity(itemToDelete.product.id, 0);
+                  setItemToDelete(null);
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-xs transition"
+              >
+                Ya, Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* #5 MODAL KONFIRMASI: Kosongkan Keranjang */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 text-xs space-y-3 animate-fadeIn">
+            <div className="flex items-center gap-2 text-red-700 font-bold text-sm">
+              <div className="w-8 h-8 rounded-xl bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+                <Trash2 className="w-4 h-4" />
+              </div>
+              <h3>Kosongkan Keranjang?</h3>
+            </div>
+            <p className="text-slate-600 leading-relaxed">
+              Seluruh barang yang ada di dalam keranjang transaksi akan dihapus. Lanjutkan?
+            </p>
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowClearConfirm(false)}
+                className="px-3.5 py-2 border border-slate-300 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  clearCart();
+                  setShowClearConfirm(false);
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-xs transition"
+              >
+                Ya, Kosongkan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
