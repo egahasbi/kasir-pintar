@@ -1,4 +1,18 @@
 /** @type {import('tailwindcss').Config} */
+const cafeColors = {
+  50: '#FDF8F3',   // Cream foam
+  100: '#F6ECE1',  // Steamed milk latte
+  200: '#E9D5C3',  // Caramel froth
+  300: '#D8B89E',  // Warm cinnamon
+  400: '#BC8E69',  // Cappuccino
+  500: '#9F6744',  // Roasted bean
+  600: '#7F4F24',  // Rich café brown (Primary)
+  700: '#673B1B',  // Dark espresso roast
+  800: '#512C14',  // French roast
+  900: '#3B1E0C',  // Deep roast
+  950: '#261206',  // Black coffee
+};
+
 export default {
   content: [
     "./index.html",
@@ -8,19 +22,11 @@ export default {
     extend: {
       colors: {
         // Palet warna Café (Warm Roasted Coffee & Creamy Latte)
-        emerald: {
-          50: '#FBF7F2',   // Foam susu / Cream
-          100: '#F5ECE1',  // Steamed milk
-          200: '#E7D5C2',  // Latte foam
-          300: '#D5B79B',  // Caramel froth
-          400: '#B88B67',  // Cappuccino
-          500: '#9C6644',  // Roasted bean
-          600: '#7F4F24',  // Rich café brown (Primary)
-          700: '#683B1E',  // Dark espresso
-          800: '#532D15',  // French roast
-          900: '#3D1F0C',  // Deep roast
-          950: '#261205',  // Black coffee
-        },
+        amber: cafeColors,
+        emerald: cafeColors,
+        green: cafeColors,
+        teal: cafeColors,
+        lime: cafeColors,
       },
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
@@ -29,4 +35,5 @@ export default {
   },
   plugins: [],
 };
+
 

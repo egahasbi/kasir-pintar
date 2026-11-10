@@ -73,7 +73,7 @@ export default function Transactions() {
     <div className="max-w-5xl mx-auto space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Receipt className="w-5 h-5 text-emerald-600" />
+          <Receipt className="w-5 h-5 text-amber-600" />
           <h1 className="text-xl font-bold">Riwayat Transaksi</h1>
         </div>
         <button onClick={fetchTransactions} className="p-1.5 border rounded-lg hover:bg-slate-50 text-xs flex items-center gap-1">
@@ -97,7 +97,7 @@ export default function Transactions() {
             <button
               key={m}
               onClick={() => setMethod(m)}
-              className={`px-3 py-1 rounded text-xs font-bold ${method === m ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}
+              className={`px-3 py-1 rounded text-xs font-bold ${method === m ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-600'}`}
             >
               {m}
             </button>
@@ -126,10 +126,10 @@ export default function Transactions() {
                 <tr key={tx.id} className="hover:bg-slate-50">
                   <td className="py-2.5 px-3 font-bold">{tx.invoice_number}</td>
                   <td className="py-2.5 px-3 text-slate-500">{new Date(tx.created_at).toLocaleString('id-ID')}</td>
-                  <td className="py-2.5 px-3 uppercase font-bold text-emerald-700">{tx.payment_method}</td>
+                  <td className="py-2.5 px-3 uppercase font-bold text-amber-700">{tx.payment_method}</td>
                   <td className="py-2.5 px-3 text-right font-bold">{formatIDR(tx.final_amount)}</td>
                   <td className="py-2.5 px-3 text-center">
-                    <button onClick={() => handleReprint(tx)} className="p-1 text-slate-600 hover:text-emerald-600">
+                    <button onClick={() => handleReprint(tx)} className="p-1 text-slate-600 hover:text-amber-600">
                       <Printer className="w-4 h-4" />
                     </button>
                   </td>

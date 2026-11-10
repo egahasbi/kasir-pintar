@@ -244,8 +244,8 @@ export default function Inventory() {
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-        <Clock className="w-3 h-3 text-emerald-500" />
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+        <Clock className="w-3 h-3 text-amber-500" />
         {days > 90 ? '>90d safe' : `${days}d safe`}
       </span>
     );
@@ -264,7 +264,7 @@ export default function Inventory() {
               setEditingProduct(null);
               setIsModalOpen(true);
             }}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-600 text-sm font-bold text-white hover:bg-emerald-700 transition shadow-xs"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-amber-600 text-sm font-bold text-white hover:bg-amber-700 transition shadow-xs"
           >
             <Plus className="w-4 h-4" />
             Tambah Produk
@@ -290,7 +290,7 @@ export default function Inventory() {
         <div
           className={`flex items-center gap-2 p-4 rounded-lg border text-sm ${
             reorderStatusMsg.type === 'success'
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              ? 'bg-amber-50 border-amber-200 text-amber-800'
               : 'bg-red-50 border-red-200 text-red-800'
           }`}
         >
@@ -501,7 +501,7 @@ export default function Inventory() {
                               setEditingProduct(item);
                               setIsModalOpen(true);
                             }}
-                            className="p-1.5 rounded-md hover:bg-slate-100 text-slate-600 hover:text-emerald-600 transition"
+                            className="p-1.5 rounded-md hover:bg-slate-100 text-slate-600 hover:text-amber-600 transition"
                             title="Edit Produk"
                           >
                             <Edit2 className="w-4 h-4" />

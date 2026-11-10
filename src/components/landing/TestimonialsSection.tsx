@@ -26,7 +26,7 @@ export const TestimonialsSection: React.FC = () => {
   return (
     <section className="space-y-6">
       <div className="text-center space-y-2 max-w-xl mx-auto">
-        <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+        <span className="text-xs font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
           Kisah Nyata Pedagang
         </span>
         <h2 className="text-2xl sm:text-3xl font-black text-slate-900">

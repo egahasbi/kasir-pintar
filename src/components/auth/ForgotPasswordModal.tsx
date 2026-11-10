@@ -51,7 +51,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
       <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-200">
         <div className="flex items-center justify-between mb-3 border-b pb-2">
           <div className="flex items-center gap-2">
-            <KeyRound className="w-4 h-4 text-emerald-600" />
+            <KeyRound className="w-4 h-4 text-amber-600" />
             <h3 className="font-bold text-sm text-slate-800">Lupa Kata Sandi</h3>
           </div>
           <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600">
@@ -67,7 +67,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
           <div
             className={`p-2.5 mb-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 ${
               msg.type === 'success'
-                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                ? 'bg-amber-50 text-amber-700 border border-amber-200'
                 : 'bg-red-50 text-red-600 border border-red-200'
             }`}
           >
@@ -85,7 +85,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="nama@toko.com"
-              className="w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              className="w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none"
             />
           </div>
 
@@ -98,7 +98,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="Kata sandi baru"
-              className="w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              className="w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none"
             />
           </div>
 
@@ -112,7 +112,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-sm"
+              className="px-4 py-2 bg-amber-600 text-white rounded-xl font-bold hover:bg-amber-700 shadow-sm"
             >
               Simpan Kata Sandi
             </button>

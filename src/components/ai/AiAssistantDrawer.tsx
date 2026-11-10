@@ -172,7 +172,7 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({ isOpen, on
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 bg-emerald-600 dark:bg-emerald-700 text-white">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 bg-amber-600 dark:bg-amber-700 text-white">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
               <Bot className="w-5 h-5 text-white" />
@@ -180,22 +180,22 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({ isOpen, on
             <div>
               <h3 className="font-semibold text-base tracking-tight flex items-center gap-1.5">
                 Kasir Pintar AI
-                <Sparkles className="w-4 h-4 text-emerald-200 animate-pulse" />
+                <Sparkles className="w-4 h-4 text-amber-200 animate-pulse" />
               </h3>
-              <p className="text-xs text-emerald-100">Konsultan Bisnis & Analitik UMKM</p>
+              <p className="text-xs text-amber-100">Konsultan Bisnis & Analitik UMKM</p>
             </div>
           </div>
           <div className="flex items-center space-x-1">
             <button
               onClick={handleClearHistory}
               title="Bersihkan Percakapan"
-              className="p-2 rounded-lg text-emerald-100 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-2 rounded-lg text-amber-100 hover:text-white hover:bg-white/10 transition-colors"
             >
               <Trash2 className="w-4 h-4" />
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg text-emerald-100 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-2 rounded-lg text-amber-100 hover:text-white hover:bg-white/10 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -215,17 +215,17 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({ isOpen, on
                     key={idx}
                     disabled={isLoading}
                     onClick={() => handleSendMessage(item.prompt)}
-                    className="flex items-center justify-between w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500 rounded-xl text-left transition-all group disabled:opacity-50"
+                    className="flex items-center justify-between w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500 dark:hover:border-amber-500 rounded-xl text-left transition-all group disabled:opacity-50"
                   >
                     <div className="flex items-center space-x-2.5 truncate">
-                      <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                      <div className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 group-hover:bg-amber-600 group-hover:text-white transition-colors">
                         <Icon className="w-4 h-4" />
                       </div>
                       <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">
                         {item.label}
                       </span>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-500 transition-colors flex-shrink-0" />
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-amber-500 transition-colors flex-shrink-0" />
                   </button>
                 );
               })}
@@ -255,7 +255,7 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({ isOpen, on
                     className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
                       isUser
                         ? 'bg-slate-700 text-white dark:bg-slate-300 dark:text-slate-900'
-                        : 'bg-emerald-600 text-white shadow-sm'
+                        : 'bg-amber-600 text-white shadow-sm'
                     }`}
                   >
                     {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
@@ -265,7 +265,7 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({ isOpen, on
                     <div
                       className={`p-3 rounded-2xl text-xs sm:text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${
                         isUser
-                          ? 'bg-emerald-600 text-white rounded-tr-none'
+                          ? 'bg-amber-600 text-white rounded-tr-none'
                           : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-tl-none'
                       }`}
                     >
@@ -285,11 +285,11 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({ isOpen, on
 
             {isLoading && (
               <div className="flex items-start space-x-2.5">
-                <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center flex-shrink-0">
+                <div className="w-7 h-7 rounded-full bg-amber-600 text-white flex items-center justify-center flex-shrink-0">
                   <Bot className="w-4 h-4" />
                 </div>
                 <div className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl rounded-tl-none flex items-center space-x-2 shadow-sm">
-                  <Loader2 className="w-4 h-4 text-emerald-600 animate-spin" />
+                  <Loader2 className="w-4 h-4 text-amber-600 animate-spin" />
                   <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                     Menganalisis data toko...
                   </span>
@@ -310,12 +310,12 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({ isOpen, on
               onKeyDown={handleKeyDown}
               disabled={isLoading}
               placeholder="Tanya performa omset, strategi promo..."
-              className="w-full pl-3.5 pr-12 py-3 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs sm:text-sm rounded-xl border border-transparent focus:border-emerald-500 dark:focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all placeholder:text-slate-400"
+              className="w-full pl-3.5 pr-12 py-3 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs sm:text-sm rounded-xl border border-transparent focus:border-amber-500 dark:focus:border-amber-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all placeholder:text-slate-400"
             />
             <button
               onClick={() => handleSendMessage()}
               disabled={!inputPrompt.trim() || isLoading}
-              className="absolute right-1.5 p-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white rounded-lg transition-colors shadow-sm disabled:cursor-not-allowed"
+              className="absolute right-1.5 p-2 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white rounded-lg transition-colors shadow-sm disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />

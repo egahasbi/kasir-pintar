@@ -8,6 +8,7 @@ import {
   saveRegisteredUser,
   resetUserPassword,
   recordUserActivity,
+  syncUsersWithServer,
   RegisteredAccount,
   INACTIVITY_TIMEOUT_MS,
   STORAGE_KEY_LAST_ACTIVITY,
@@ -101,6 +102,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initAuth = async () => {
       try {
+        // Sync registered accounts from centralized server (e.g. PC to HP)
+        await syncUsersWithServer();
+
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         if (!mounted) return;
 
@@ -155,8 +159,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const cleanEmail = emailInput.trim().toLowerCase();
 
     // 1. Cek akun teregistrasi (termasuk super user admin@admin.com)
-    const localUsers = getRegisteredUsers();
-    const matched = localUsers.find((u) => u.email.toLowerCase() === cleanEmail);
+    let localUsers = getRegisteredUsers();
+    let matched = localUsers.find((u) => u.email.toLowerCase() === cleanEmail);
+
+    // Jika belum ada di local, sinkronkan seketika dengan server (misal baru dibuat di PC, mau login di HP)
+    if (!matched) {
+      try {
+        localUsers = await syncUsersWithServer();
+        matched = localUsers.find((u) => u.email.toLowerCase() === cleanEmail);
+      } catch {}
+    }
 
     if (matched) {
       if (matched.is_active === false) {
@@ -175,7 +187,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: matched.id,
         email: matched.email,
         full_name: matched.full_name || 'Pengguna Toko',
-        role: matched.role || 'owner',
+        role: matched.role || 'admin',
         store_id: matched.store_name || 'default-store',
         created_at: matched.created_at || now,
         updated_at: now,

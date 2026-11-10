@@ -49,6 +49,26 @@ export const getRegisteredUsers = (): RegisteredAccount[] => {
   }
 };
 
+export const syncUsersWithServer = async (): Promise<RegisteredAccount[]> => {
+  try {
+    const res = await fetch('/api/sync/users');
+    if (res.ok) {
+      const { data } = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        const local = getRegisteredUsers();
+        const map = new Map<string, RegisteredAccount>();
+        map.set(SUPER_USER_ACCOUNT.email.toLowerCase(), SUPER_USER_ACCOUNT);
+        local.forEach((u) => map.set(u.email.toLowerCase(), u));
+        data.forEach((u: RegisteredAccount) => map.set(u.email.toLowerCase(), { ...map.get(u.email.toLowerCase()), ...u }));
+        const combined = Array.from(map.values());
+        localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(combined));
+        return combined;
+      }
+    }
+  } catch {}
+  return getRegisteredUsers();
+};
+
 export const saveRegisteredUser = (acc: RegisteredAccount) => {
   const users = getRegisteredUsers();
   const existingIdx = users.findIndex((u) => u.email.toLowerCase() === acc.email.toLowerCase());
@@ -65,6 +85,13 @@ export const saveRegisteredUser = (acc: RegisteredAccount) => {
     users.push(item);
   }
   localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
+
+  // Sync to central backend server so other devices (HP, tablet) can login
+  fetch('/api/sync/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(item),
+  }).catch(() => {});
 };
 
 export const recordUserActivity = (emailOrId: string) => {
@@ -85,6 +112,13 @@ export const updateUserAccount = (id: string, updates: Partial<RegisteredAccount
   if (idx >= 0) {
     users[idx] = { ...users[idx], ...updates };
     localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
+
+    fetch('/api/sync/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(users[idx]),
+    }).catch(() => {});
+
     return true;
   }
   return false;
@@ -98,6 +132,8 @@ export const deleteUserAccount = (id: string): boolean => {
   }
   const next = users.filter((u) => u.id !== id);
   localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(next));
+
+  fetch(`/api/sync/users/${id}`, { method: 'DELETE' }).catch(() => {});
   return true;
 };
 
@@ -107,6 +143,13 @@ export const resetUserPassword = (targetEmail: string, newPass: string): boolean
   if (user) {
     user.password = newPass;
     localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
+
+    fetch('/api/sync/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(user),
+    }).catch(() => {});
+
     return true;
   }
   return false;

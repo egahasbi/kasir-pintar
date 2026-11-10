@@ -54,13 +54,13 @@ export const UserTable: React.FC<TableProps> = ({ accounts, onEdit, onDelete, on
                 </td>
                 <td className="py-2.5 px-3">
                   <div className="flex items-center gap-1 font-bold">
-                    <span className={`w-2 h-2 rounded-full ${online ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></span>
-                    <span className={online ? 'text-emerald-700' : 'text-slate-500'}>{online ? 'Aktif Online' : 'Inaktif'}</span>
+                    <span className={`w-2 h-2 rounded-full ${online ? 'bg-amber-500 animate-pulse' : 'bg-slate-300'}`}></span>
+                    <span className={online ? 'text-amber-700' : 'text-slate-500'}>{online ? 'Aktif Online' : 'Inaktif'}</span>
                   </div>
                   <div className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5"><Clock className="w-3 h-3" /> {formatActivity(acc.last_activity_at)}</div>
                 </td>
                 <td className="py-2.5 px-3 text-center">
-                  <button onClick={() => onToggle(acc)} disabled={isSuper} className={`px-2 py-0.5 rounded text-[10px] font-bold border ${acc.is_active === false ? 'bg-red-50 text-red-600 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'} ${isSuper ? 'opacity-50' : ''}`}>
+                  <button onClick={() => onToggle(acc)} disabled={isSuper} className={`px-2 py-0.5 rounded text-[10px] font-bold border ${acc.is_active === false ? 'bg-red-50 text-red-600 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'} ${isSuper ? 'opacity-50' : ''}`}>
                     {acc.is_active === false ? 'Nonaktif' : 'Aktif'}
                   </button>
                 </td>

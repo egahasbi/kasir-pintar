@@ -26,7 +26,7 @@ export const HowItWorksSection: React.FC = () => {
   return (
     <section className="space-y-6">
       <div className="text-center space-y-2 max-w-xl mx-auto">
-        <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+        <span className="text-xs font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
           Super Cepat
         </span>
         <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
@@ -45,7 +45,7 @@ export const HowItWorksSection: React.FC = () => {
               <span className="text-4xl font-black text-slate-100 absolute top-3 right-4 select-none">
                 {st.num}
               </span>
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
                 <Icon className="w-5 h-5" />
               </div>
               <h3 className="font-extrabold text-sm text-slate-900">{st.title}</h3>

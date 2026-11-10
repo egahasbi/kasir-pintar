@@ -27,7 +27,7 @@ export function PosCartItems({
     <>
       <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
         <div className="flex items-center gap-2">
-          <ShoppingCart className="w-5 h-5 text-emerald-600" />
+          <ShoppingCart className="w-5 h-5 text-amber-600" />
           <h2 className="font-bold text-slate-900 text-sm">Keranjang Transaksi</h2>
         </div>
         {cart.length > 0 && (
@@ -91,7 +91,7 @@ export function PosCartItems({
       <div className="p-3 border-t border-slate-200 bg-slate-50/50 flex items-center justify-between">
         <button
           onClick={() => setIsDiscountOpen(true)}
-          className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1.5"
+          className="text-xs font-semibold text-amber-700 hover:text-amber-800 flex items-center gap-1.5"
         >
           <Tag className="w-3.5 h-3.5" />
           {appliedCoupon ? `Kupon: ${appliedCoupon.name || appliedCoupon.code}` : '+ Tambah Diskon / Promo'}

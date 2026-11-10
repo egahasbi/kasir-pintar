@@ -205,7 +205,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ products, onProd
             onClick={() => setActiveTab('scan')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
               activeTab === 'scan'
-                ? 'bg-white text-emerald-700 shadow-xs'
+                ? 'bg-white text-amber-700 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -220,7 +220,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ products, onProd
             }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
               activeTab === 'manual'
-                ? 'bg-white text-emerald-700 shadow-xs'
+                ? 'bg-white text-amber-700 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -236,7 +236,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ products, onProd
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-xs ${
               isCameraActive
                 ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
-                : 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'
+                : 'bg-amber-600 text-white hover:bg-amber-700 active:scale-95'
             }`}
           >
             {isCameraActive ? (
@@ -258,10 +258,10 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ products, onProd
       {activeTab === 'scan' && (
         <div className="space-y-3">
           {isCameraActive && (
-            <div className="relative w-full rounded-xl overflow-hidden bg-black border-2 border-emerald-500 shadow-md">
+            <div className="relative w-full rounded-xl overflow-hidden bg-black border-2 border-amber-500 shadow-md">
               <div id={readerElementId} className="w-full" />
               <div className="p-2 bg-slate-900/90 text-center text-[11px] text-white flex items-center justify-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block mr-1"></span>
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping inline-block mr-1"></span>
                 Arahkan barcode produk ke tengah kamera HP
               </div>
             </div>
@@ -277,7 +277,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ products, onProd
                 value={manualSku}
                 onChange={(e) => setManualSku(e.target.value)}
                 placeholder="Scan barcode fisik atau ketik SKU / Nama..."
-                className="w-full pl-9 pr-3 py-2.5 text-xs sm:text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                className="w-full pl-9 pr-3 py-2.5 text-xs sm:text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
               />
             </div>
             <button
@@ -295,7 +295,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ products, onProd
       {activeTab === 'manual' && (
         <form onSubmit={handleAddManualProduct} className="space-y-3 bg-slate-50/70 p-3 rounded-xl border border-slate-200">
           <div className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-            <PlusCircle className="w-4 h-4 text-emerald-600" />
+            <PlusCircle className="w-4 h-4 text-amber-600" />
             <span>Input Barang Manual (Langsung Masuk Keranjang)</span>
           </div>
 
@@ -308,7 +308,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ products, onProd
                 value={manualName}
                 onChange={(e) => setManualName(e.target.value)}
                 placeholder="Contoh: Es Teh Manis Jumbo"
-                className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white"
+                className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white"
               />
             </div>
 
@@ -322,7 +322,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ products, onProd
                 value={manualPrice}
                 onChange={(e) => setManualPrice(e.target.value)}
                 placeholder="5000"
-                className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white font-medium"
+                className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white font-medium"
               />
             </div>
 
@@ -333,14 +333,14 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ products, onProd
                 min="1"
                 value={manualQty}
                 onChange={(e) => setManualQty(parseInt(e.target.value) || 1)}
-                className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white font-bold text-center"
+                className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white font-bold text-center"
               />
             </div>
           </div>
 
           <button
             type="submit"
-            className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition"
+            className="w-full py-2.5 px-4 bg-amber-600 hover:bg-amber-700 active:scale-98 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition"
           >
             <PlusCircle className="w-4 h-4" />
             <span>Tambah ke Keranjang</span>
@@ -357,8 +357,8 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ products, onProd
       )}
 
       {successStatus && (
-        <div className="flex items-center gap-2 p-2.5 bg-emerald-50 text-emerald-800 rounded-xl text-xs border border-emerald-200 font-medium animate-fadeIn">
-          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+        <div className="flex items-center gap-2 p-2.5 bg-amber-50 text-amber-800 rounded-xl text-xs border border-amber-200 font-medium animate-fadeIn">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-amber-600" />
           <span className="flex-1">{successStatus}</span>
         </div>
       )}

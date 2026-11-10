@@ -225,7 +225,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Status</span>
-                    <span className="text-green-700 font-bold uppercase">BERHASIL / SETTLED</span>
+                    <span className="text-[#673B1B] font-bold uppercase">BERHASIL / SETTLED</span>
                   </div>
                 </div>
               )}
@@ -261,7 +261,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
           <button
             type="button"
             onClick={handlePrint}
-            className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors flex items-center justify-center gap-2 shadow-sm"
+            className="flex-1 py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-colors flex items-center justify-center gap-2 shadow-sm"
           >
             <svg
               className="w-4 h-4"

@@ -50,7 +50,7 @@ export const FaqSection: React.FC = () => {
                 <span>{faq.q}</span>
                 <ChevronDown
                   className={`w-4 h-4 text-slate-400 transition-transform ${
-                    isOpen ? 'rotate-180 text-emerald-600' : ''
+                    isOpen ? 'rotate-180 text-amber-600' : ''
                   }`}
                 />
               </button>

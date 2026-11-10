@@ -36,7 +36,7 @@ export function PosCatalog({
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Cari nama barang, barcode, SKU..."
-            className="w-full pl-10 pr-9 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+            className="w-full pl-10 pr-9 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
           />
           {searchTerm && (
             <button
@@ -56,7 +56,7 @@ export function PosCatalog({
               onClick={() => onSelectCategory(c)}
               className={`px-3 py-1.5 rounded-xl capitalize font-semibold whitespace-nowrap transition touch-manipulation ${
                 selectedCategory === c
-                  ? 'bg-emerald-600 text-white shadow-xs'
+                  ? 'bg-amber-600 text-white shadow-xs'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200 active:bg-slate-300'
               }`}
             >
@@ -87,11 +87,11 @@ export function PosCatalog({
                   className={`p-3 rounded-xl border text-left flex flex-col justify-between transition group relative select-none touch-manipulation min-h-[90px] ${
                     isOutOfStock
                       ? 'border-slate-200 bg-slate-50 opacity-50 cursor-not-allowed'
-                      : 'border-slate-200 hover:border-emerald-500 hover:shadow-sm active:scale-[0.97] active:bg-emerald-50/40 bg-white'
+                      : 'border-slate-200 hover:border-amber-500 hover:shadow-sm active:scale-[0.97] active:bg-amber-50/40 bg-white'
                   }`}
                 >
                   <div className="w-full">
-                    <div className="text-xs font-bold text-slate-800 line-clamp-2 leading-tight group-hover:text-emerald-700">
+                    <div className="text-xs font-bold text-slate-800 line-clamp-2 leading-tight group-hover:text-amber-700">
                       {p.name}
                     </div>
                     <div className="text-[10px] text-slate-400 mt-1 truncate">
@@ -114,7 +114,7 @@ export function PosCatalog({
                     </div>
 
                     {!isOutOfStock && (
-                      <span className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition">
+                      <span className="w-6 h-6 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition">
                         <Plus className="w-3.5 h-3.5" />
                       </span>
                     )}

@@ -42,27 +42,27 @@ export const ComparisonSection: React.FC = () => {
         </div>
 
         {/* Dengan KASIRKITA */}
-        <div className="p-6 rounded-3xl bg-emerald-50/50 border-2 border-emerald-500/50 space-y-4 shadow-sm">
-          <div className="flex items-center gap-2 text-emerald-800 font-extrabold text-sm uppercase tracking-wider">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+        <div className="p-6 rounded-3xl bg-amber-50/50 border-2 border-amber-500/50 space-y-4 shadow-sm">
+          <div className="flex items-center gap-2 text-amber-800 font-extrabold text-sm uppercase tracking-wider">
+            <CheckCircle2 className="w-5 h-5 text-amber-600" />
             <span>Dengan KASIRKITA (Praktis, Cepat, Hemat)</span>
           </div>
 
           <ul className="space-y-3 text-xs sm:text-sm text-slate-700 font-medium">
             <li className="flex items-start gap-2.5">
-              <span className="text-emerald-600 font-bold">✓</span>
+              <span className="text-amber-600 font-bold">✓</span>
               <span>Cukup pakai HP Android atau iPhone yang Anda punya. Nol biaya hardware.</span>
             </li>
             <li className="flex items-start gap-2.5">
-              <span className="text-emerald-600 font-bold">✓</span>
+              <span className="text-amber-600 font-bold">✓</span>
               <span>Cetak struk thermal cepat & jelas via printer Bluetooth/USB 58mm atau 80mm.</span>
             </li>
             <li className="flex items-start gap-2.5">
-              <span className="text-emerald-600 font-bold">✓</span>
+              <span className="text-amber-600 font-bold">✓</span>
               <span>Stok otomatis berkurang saat transaksi dan ada notifikasi saat barang mulai habis.</span>
             </li>
             <li className="flex items-start gap-2.5">
-              <span className="text-emerald-600 font-bold">✓</span>
+              <span className="text-amber-600 font-bold">✓</span>
               <span>Laporan omset, laba kotor, dan produk terlaris otomatis terhitung secara realtime.</span>
             </li>
           </ul>

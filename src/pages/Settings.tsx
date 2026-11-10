@@ -27,7 +27,7 @@ export default function Settings() {
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+        <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
           <Store className="w-5 h-5" />
         </div>
         <div>
@@ -37,8 +37,8 @@ export default function Settings() {
       </div>
 
       {savedSuccess && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold flex items-center gap-2">
-          <CheckCircle className="w-4 h-4 text-emerald-600" />
+        <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs font-semibold flex items-center gap-2">
+          <CheckCircle className="w-4 h-4 text-amber-600" />
           <span>Pengaturan toko berhasil disimpan!</span>
         </div>
       )}
@@ -51,7 +51,7 @@ export default function Settings() {
             required
             value={storeName}
             onChange={(e) => setStoreName(e.target.value)}
-            className="w-full px-3 py-2 border rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+            className="w-full px-3 py-2 border rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
           />
         </div>
 
@@ -61,7 +61,7 @@ export default function Settings() {
             type="text"
             value={storeAddress}
             onChange={(e) => setStoreAddress(e.target.value)}
-            className="w-full px-3 py-2 border rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+            className="w-full px-3 py-2 border rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
           />
         </div>
 
@@ -71,7 +71,7 @@ export default function Settings() {
             type="text"
             value={storePhone}
             onChange={(e) => setStorePhone(e.target.value)}
-            className="w-full px-3 py-2 border rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+            className="w-full px-3 py-2 border rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
           />
         </div>
 
@@ -84,7 +84,7 @@ export default function Settings() {
               max="50"
               value={taxRatePercent}
               onChange={(e) => setTaxRatePercent(Number(e.target.value))}
-              className="w-full px-3 py-2 border rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none pr-8"
+              className="w-full px-3 py-2 border rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none pr-8"
             />
             <Percent className="w-4 h-4 text-slate-400 absolute right-3 top-2.5 pointer-events-none" />
           </div>
@@ -96,7 +96,7 @@ export default function Settings() {
             type="text"
             value={receiptFooter}
             onChange={(e) => setReceiptFooter(e.target.value)}
-            className="w-full px-3 py-2 border rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+            className="w-full px-3 py-2 border rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
           />
         </div>
 
@@ -104,7 +104,7 @@ export default function Settings() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 shadow-sm transition"
+            className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 active:scale-98 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 shadow-sm transition"
           >
             <Save className="w-4 h-4" />
             <span>Simpan Perubahan</span>

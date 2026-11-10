@@ -73,11 +73,11 @@ export default function Reports() {
     <div className="max-w-5xl mx-auto space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-emerald-600" />
+          <BarChart3 className="w-5 h-5 text-amber-600" />
           <h1 className="text-xl font-bold">Laporan Penjualan</h1>
         </div>
         <div className="flex gap-2">
-          <button onClick={handleExportCsv} className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center gap-1">
+          <button onClick={handleExportCsv} className="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-bold flex items-center gap-1">
             <Download className="w-3.5 h-3.5" /> Unduh CSV
           </button>
           <button onClick={fetchReports} className="p-1.5 border rounded-lg hover:bg-slate-50">
@@ -93,7 +93,7 @@ export default function Reports() {
         </div>
         <div className="p-3 bg-white rounded-xl border">
           <span className="text-[10px] text-slate-500 uppercase block">Laba Kotor</span>
-          <span className="text-sm font-extrabold text-emerald-600">{formatIDR(grossProfit)}</span>
+          <span className="text-sm font-extrabold text-amber-600">{formatIDR(grossProfit)}</span>
         </div>
         <div className="p-3 bg-white rounded-xl border">
           <span className="text-[10px] text-slate-500 uppercase block">Transaksi</span>

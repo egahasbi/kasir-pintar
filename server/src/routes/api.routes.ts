@@ -184,4 +184,79 @@ router.post('/transactions', async (req: Request, res: Response) => {
   }
 });
 
+// Centralized Sync Endpoints (for multi-device sharing: PC, Mobile HP, Tablet)
+import fs from 'fs';
+import path from 'path';
+
+const DATA_DIR = path.resolve(process.cwd(), 'server', 'data');
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const STORE_DATA_FILE = path.join(DATA_DIR, 'store_data.json');
+
+const readJson = (file: string, fallback: any) => {
+  try {
+    if (fs.existsSync(file)) {
+      const raw = fs.readFileSync(file, 'utf-8');
+      return JSON.parse(raw);
+    }
+  } catch {}
+  return fallback;
+};
+
+const writeJson = (file: string, data: any) => {
+  try {
+    fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (e) {
+    console.error('Failed to write JSON data:', e);
+  }
+};
+
+router.get('/sync/users', (_req: Request, res: Response): void => {
+  const users = readJson(USERS_FILE, []);
+  res.status(200).json({ data: users });
+});
+
+router.post('/sync/users', (req: Request, res: Response): void => {
+  const user = req.body;
+  if (!user || !user.email) {
+    res.status(400).json({ error: 'Invalid user payload' });
+    return;
+  }
+  const users = readJson(USERS_FILE, []);
+  const idx = users.findIndex((u: any) => u.email.toLowerCase() === user.email.toLowerCase());
+  if (idx >= 0) {
+    users[idx] = { ...users[idx], ...user };
+  } else {
+    users.push(user);
+  }
+  writeJson(USERS_FILE, users);
+  res.status(200).json({ success: true, data: user });
+});
+
+router.delete('/sync/users/:id', (req: Request, res: Response): void => {
+  const id = String(req.params.id);
+  const users = readJson(USERS_FILE, []);
+  const next = users.filter((u: any) => u.id !== id);
+  writeJson(USERS_FILE, next);
+  res.status(200).json({ success: true });
+});
+
+router.get('/sync/data/:key', (req: Request, res: Response): void => {
+  const key = String(req.params.key);
+  const store = readJson(STORE_DATA_FILE, {});
+  res.status(200).json({ data: store[key] || null });
+});
+
+router.post('/sync/data/:key', (req: Request, res: Response): void => {
+  const key = String(req.params.key);
+  const { value } = req.body;
+  const store = readJson(STORE_DATA_FILE, {});
+  store[key] = value;
+  writeJson(STORE_DATA_FILE, store);
+  res.status(200).json({ success: true });
+});
+
 export default router;

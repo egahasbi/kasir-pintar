@@ -183,7 +183,7 @@ export default function PosPage() {
           onClick={() => setMobileTab('catalog')}
           className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition ${
             mobileTab === 'catalog'
-              ? 'bg-emerald-600 text-white shadow-sm'
+              ? 'bg-amber-600 text-white shadow-sm'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
@@ -196,7 +196,7 @@ export default function PosPage() {
           onClick={() => setMobileTab('cart')}
           className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition relative ${
             mobileTab === 'cart'
-              ? 'bg-emerald-600 text-white shadow-sm'
+              ? 'bg-amber-600 text-white shadow-sm'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
@@ -205,7 +205,7 @@ export default function PosPage() {
           {totalCartItemsCount > 0 && (
             <span
               className={`px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${
-                mobileTab === 'cart' ? 'bg-white text-emerald-700' : 'bg-emerald-600 text-white'
+                mobileTab === 'cart' ? 'bg-white text-amber-700' : 'bg-amber-600 text-white'
               }`}
             >
               {totalCartItemsCount}
@@ -246,7 +246,7 @@ export default function PosPage() {
             <button
               type="button"
               onClick={() => setMobileTab('catalog')}
-              className="text-xs font-semibold text-emerald-700 flex items-center gap-1 hover:underline"
+              className="text-xs font-semibold text-amber-700 flex items-center gap-1 hover:underline"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Tambah Barang Lainnya</span>
@@ -292,15 +292,15 @@ export default function PosPage() {
             className="w-full bg-slate-900 text-white p-3.5 rounded-2xl shadow-xl flex items-center justify-between border border-slate-800 active:scale-[0.98] transition"
           >
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold text-xs">
+              <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-xs">
                 {totalCartItemsCount}
               </div>
               <div className="text-left">
                 <div className="text-[11px] text-slate-300">Total Belanja</div>
-                <div className="font-extrabold text-sm text-emerald-400">{formatIDR(grandTotal)}</div>
+                <div className="font-extrabold text-sm text-amber-400">{formatIDR(grandTotal)}</div>
               </div>
             </div>
-            <div className="flex items-center gap-1 text-xs font-bold bg-emerald-600 px-3 py-2 rounded-xl">
+            <div className="flex items-center gap-1 text-xs font-bold bg-amber-600 px-3 py-2 rounded-xl">
               <span>Buka Keranjang</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </div>

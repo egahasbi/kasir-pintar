@@ -67,7 +67,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
               value={newStock}
               onChange={(e) => setNewStock(e.target.value === '' ? '' : Number(e.target.value))}
               placeholder="Masukkan jumlah fisik..."
-              className="w-full p-2 border rounded-lg text-sm font-bold text-emerald-700"
+              className="w-full p-2 border rounded-lg text-sm font-bold text-amber-700"
             />
           </div>
 
@@ -83,7 +83,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
 
           <div className="flex justify-end gap-2 pt-2 border-t">
             <button type="button" onClick={onClose} className="px-3 py-1.5 border rounded-lg">Batal</button>
-            <button type="submit" disabled={loading} className="px-3 py-1.5 bg-emerald-600 text-white font-bold rounded-lg flex items-center gap-1">
+            <button type="submit" disabled={loading} className="px-3 py-1.5 bg-amber-600 text-white font-bold rounded-lg flex items-center gap-1">
               <Check className="w-3.5 h-3.5" /> <span>{loading ? 'Menyimpan...' : 'Perbarui Stok'}</span>
             </button>
           </div>

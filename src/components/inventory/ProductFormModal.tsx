@@ -112,7 +112,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div><label className="block mb-0.5">Modal</label><input type="number" min="0" value={costPrice} onChange={(e) => setCostPrice(e.target.value === '' ? '' : Number(e.target.value))} className="w-full p-1.5 border rounded" /></div>
-            <div><label className="block mb-0.5 font-bold text-emerald-700">Jual *</label><input type="number" required min="1" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value === '' ? '' : Number(e.target.value))} className="w-full p-1.5 border rounded font-bold text-emerald-700" /></div>
+            <div><label className="block mb-0.5 font-bold text-amber-700">Jual *</label><input type="number" required min="1" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value === '' ? '' : Number(e.target.value))} className="w-full p-1.5 border rounded font-bold text-amber-700" /></div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div><label className="block mb-0.5">Stok</label><input type="number" min="0" value={stock} onChange={(e) => setStock(e.target.value === '' ? '' : Number(e.target.value))} className="w-full p-1.5 border rounded" /></div>
@@ -120,7 +120,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
           </div>
           <div className="flex justify-end gap-2 pt-2 border-t">
             <button type="button" onClick={onClose} className="px-3 py-1 border rounded">Batal</button>
-            <button type="submit" disabled={loading} className="px-3 py-1 bg-emerald-600 text-white rounded font-bold">{loading ? 'Simpan...' : 'Simpan'}</button>
+            <button type="submit" disabled={loading} className="px-3 py-1 bg-amber-600 text-white rounded font-bold">{loading ? 'Simpan...' : 'Simpan'}</button>
           </div>
         </form>
       </div>

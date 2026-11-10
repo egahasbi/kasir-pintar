@@ -1,3 +1,49 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Root Café Warm Colors */
+:root {
+  --cafe-espresso: #3B1E0C;
+  --cafe-primary: #7F4F24;
+  --cafe-dark: #673B1B;
+  --cafe-bean: #9F6744;
+  --cafe-cream: #FDF8F3;
+  --cafe-latte: #F6ECE1;
+  --cafe-border: #E9D5C3;
+}
+
+body {
+  background-color: #FAF7F2;
+  color: #261206;
+}
+
+/* Comprehensive wildcard override: all green, emerald, teal, lime variants forced to café colors */
+[class*="text-emerald-"], [class*="text-green-"], [class*="text-teal-"], [class*="text-lime-"] {
+  color: #673B1B !important;
+}
+
+[class*="bg-emerald-600"], [class*="bg-emerald-700"], [class*="bg-emerald-800"],
+[class*="bg-green-600"], [class*="bg-green-700"], [class*="bg-green-800"],
+[class*="bg-teal-600"], [class*="bg-teal-700"] {
+  background-color: #7F4F24 !important;
+}
+
+[class*="bg-emerald-500"], [class*="bg-green-500"], [class*="bg-teal-500"] {
+  background-color: #9F6744 !important;
+}
+
+[class*="bg-emerald-50"], [class*="bg-green-50"], [class*="bg-teal-50"],
+[class*="bg-emerald-100"], [class*="bg-green-100"], [class*="bg-teal-100"] {
+  background-color: #FDF8F3 !important;
+}
+
+[class*="border-emerald-"], [class*="border-green-"], [class*="border-teal-"] {
+  border-color: #E9D5C3 !important;
+}
+
+[class*="ring-emerald-"], [class*="ring-green-"], [class*="ring-teal-"] {
+  --tw-ring-color: #7F4F24 !important;
+}
+
+

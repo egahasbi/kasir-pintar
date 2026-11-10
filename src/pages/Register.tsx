@@ -90,8 +90,8 @@ export default function Register() {
     <div className="min-h-[85vh] flex items-center justify-center py-6 px-3">
       <div className="max-w-md w-full bg-white border rounded-3xl shadow-xl p-6 sm:p-8">
         <div className="text-center mb-5">
-          <div className="w-12 h-12 mx-auto mb-2 rounded-2xl bg-emerald-700 text-white flex items-center justify-center font-black text-xl">K</div>
-          <h1 className="text-xl font-black">Daftar KASIR<span className="text-emerald-700">KITA</span></h1>
+          <div className="w-12 h-12 mx-auto mb-2 rounded-2xl bg-amber-700 text-white flex items-center justify-center font-black text-xl">K</div>
+          <h1 className="text-xl font-black">Daftar KASIR<span className="text-amber-700">KITA</span></h1>
           <p className="text-xs text-slate-500 mt-1">Mulai kelola kasir dan stok kafe / toko Anda. Coba Gratis 14 Hari.</p>
         </div>
 
@@ -129,21 +129,21 @@ export default function Register() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-emerald-600 transition"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-amber-600 transition"
                 aria-label={showPassword ? 'Sembunyikan password' : 'Lihat password'}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
           </div>
-          <button type="submit" disabled={loading} className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold flex items-center justify-center gap-1 shadow-md">
+          <button type="submit" disabled={loading} className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold flex items-center justify-center gap-1 shadow-md">
             <span>{loading ? 'Mendaftarkan...' : 'Mulai Coba Gratis'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
 
         <div className="mt-4 text-center text-xs text-slate-500">
-          Sudah punya akun? <Link to="/login" className="text-emerald-700 font-bold hover:underline">Masuk di sini</Link>
+          Sudah punya akun? <Link to="/login" className="text-amber-700 font-bold hover:underline">Masuk di sini</Link>
         </div>
       </div>
     </div>

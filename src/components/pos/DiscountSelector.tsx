@@ -176,7 +176,7 @@ export const DiscountSelector: React.FC<DiscountSelectorProps> = ({
           )}
 
           {successMsg && (
-            <div className="mx-6 mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center space-x-2 text-sm text-emerald-700">
+            <div className="mx-6 mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center space-x-2 text-sm text-amber-700">
               <Check className="w-4 h-4 flex-shrink-0" />
               <span>{successMsg}</span>
             </div>
@@ -288,7 +288,7 @@ export const DiscountSelector: React.FC<DiscountSelectorProps> = ({
                       </div>
 
                       <div className="text-right">
-                        <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800">
+                        <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-[#F6ECE1] text-[#673B1B]">
                           {discount.type === 'percentage' ? (
                             <>
                               <Percent className="w-3 h-3 mr-0.5" />

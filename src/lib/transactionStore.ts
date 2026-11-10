@@ -43,11 +43,18 @@ export const getLocalTransactions = (): StoredTransaction[] => {
 };
 
 export const saveLocalTransactions = (txs: StoredTransaction[]) => {
+  const key = getStorageKey();
   try {
-    localStorage.setItem(getStorageKey(), JSON.stringify(txs));
+    localStorage.setItem(key, JSON.stringify(txs));
   } catch (err) {
     console.error('Failed to save local transactions:', err);
   }
+
+  fetch(`/api/sync/data/${key}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ value: txs }),
+  }).catch(() => {});
 };
 
 export const addTransaction = async (tx: StoredTransaction): Promise<void> => {
@@ -105,7 +112,21 @@ export const addTransaction = async (tx: StoredTransaction): Promise<void> => {
 };
 
 export const fetchAllTransactions = async (): Promise<StoredTransaction[]> => {
-  const local = getLocalTransactions();
+  let local = getLocalTransactions();
+  const key = getStorageKey();
+
+  // 1. Sync from server backend (cross-device sync between PC and Mobile HP)
+  try {
+    const res = await fetch(`/api/sync/data/${key}`);
+    if (res.ok) {
+      const { data } = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        localStorage.setItem(key, JSON.stringify(data));
+        local = data;
+      }
+    }
+  } catch {}
+
   if (isDummySupabase()) {
     return local;
   }

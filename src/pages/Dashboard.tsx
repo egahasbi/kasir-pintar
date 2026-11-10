@@ -274,7 +274,7 @@ export default function Dashboard() {
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Omzet Hari Ini</span>
-            <span className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
+            <span className="p-2 rounded-lg bg-amber-50 text-amber-600">
               <DollarSign className="w-5 h-5" />
             </span>
           </div>
@@ -282,7 +282,7 @@ export default function Dashboard() {
             <h3 className="text-2xl font-bold text-gray-900">{formatRupiah(stats.todayRevenue)}</h3>
             <div className="flex items-center mt-2 text-xs">
               {stats.revenueChangePct >= 0 ? (
-                <span className="flex items-center font-medium text-emerald-600">
+                <span className="flex items-center font-medium text-amber-600">
                   <ArrowUpRight className="w-3.5 h-3.5 mr-0.5" />
                   +{stats.revenueChangePct}%
                 </span>
@@ -354,9 +354,9 @@ export default function Dashboard() {
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            <div className="p-4 bg-emerald-50/60 rounded-xl border border-emerald-100">
-              <span className="text-[11px] font-semibold text-emerald-800 uppercase block mb-1">Rata-rata Transaksi</span>
-              <span className="text-base font-extrabold text-emerald-950">
+            <div className="p-4 bg-amber-50/60 rounded-xl border border-amber-100">
+              <span className="text-[11px] font-semibold text-amber-800 uppercase block mb-1">Rata-rata Transaksi</span>
+              <span className="text-base font-extrabold text-amber-950">
                 {stats.todayTransactions > 0
                   ? formatRupiah(Math.round(stats.todayRevenue / stats.todayTransactions))
                   : 'Rp 0'}
@@ -489,7 +489,7 @@ export default function Dashboard() {
                   <div className="text-right">
                     <span className="text-sm font-bold text-gray-900">{formatRupiah(tx.total_amount)}</span>
                     {tx.discount_amount ? (
-                      <p className="text-[11px] text-emerald-600 font-medium">
+                      <p className="text-[11px] text-amber-600 font-medium">
                         Diskon: -{formatRupiah(tx.discount_amount)}
                       </p>
                     ) : null}

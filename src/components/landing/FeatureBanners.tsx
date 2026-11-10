@@ -5,7 +5,7 @@ export const FeatureBanners: React.FC = () => {
   return (
     <section className="space-y-8">
       <div className="text-center space-y-2 max-w-xl mx-auto">
-        <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+        <span className="text-xs font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
           Fitur Unggulan
         </span>
         <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
@@ -18,25 +18,25 @@ export const FeatureBanners: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Banner 1: Scan Barcode Kamera */}
-        <div className="p-6 sm:p-8 bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-3xl shadow-lg relative overflow-hidden space-y-4">
+        <div className="p-6 sm:p-8 bg-gradient-to-br from-[#7F4F24] via-[#673B1B] to-[#3B1E0C] text-white rounded-3xl shadow-lg relative overflow-hidden space-y-4">
           <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
             <Camera className="w-6 h-6 text-white" />
           </div>
           <div>
             <h3 className="text-lg sm:text-xl font-bold">Kamera HP Berubah Jadi Scanner Barcode</h3>
-            <p className="text-xs sm:text-sm text-emerald-100 mt-1 leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#F6ECE1] mt-1 leading-relaxed">
               Tinggal arahkan kamera belakang HP ke barcode produk (EAN-13, Code-128, atau QR). Item otomatis masuk ke keranjang belanja kasir seketika.
             </p>
           </div>
-          <div className="pt-2 text-xs font-semibold text-emerald-200 flex items-center gap-2">
+          <div className="pt-2 text-xs font-semibold text-[#D8B89E] flex items-center gap-2">
             <span>⚡ Responsif kilat & akurat</span>
           </div>
         </div>
 
         {/* Banner 2: Thermal Printer */}
         <div className="p-6 sm:p-8 bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-3xl shadow-lg relative overflow-hidden space-y-4 border border-slate-700">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 backdrop-blur-md flex items-center justify-center border border-emerald-500/30">
-            <Printer className="w-6 h-6 text-emerald-400" />
+          <div className="w-12 h-12 rounded-2xl bg-[#7F4F24]/30 backdrop-blur-md flex items-center justify-center border border-[#7F4F24]/40">
+            <Printer className="w-6 h-6 text-[#D8B89E]" />
           </div>
           <div>
             <h3 className="text-lg sm:text-xl font-bold">Cetak Struk Thermal Cepat & Rapi</h3>
@@ -44,7 +44,7 @@ export const FeatureBanners: React.FC = () => {
               Kompatibel penuh dengan printer Bluetooth & USB thermal 58mm atau 80mm. Cetak nota penjualan profesional langsung dalam hitungan detik.
             </p>
           </div>
-          <div className="pt-2 text-xs font-semibold text-emerald-400 flex items-center gap-2">
+          <div className="pt-2 text-xs font-semibold text-[#D8B89E] flex items-center gap-2">
             <span>🖨️ Format standar 58mm & 80mm</span>
           </div>
         </div>

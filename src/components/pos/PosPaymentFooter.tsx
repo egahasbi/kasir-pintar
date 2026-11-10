@@ -40,7 +40,7 @@ export function PosPaymentFooter({
           <span className="font-semibold text-slate-900">{formatIDR(subtotal)}</span>
         </div>
         {totalDiscount > 0 && (
-          <div className="flex justify-between text-emerald-600">
+          <div className="flex justify-between text-amber-600">
             <span>Diskon Kupon:</span>
             <span>-{formatIDR(totalDiscount)}</span>
           </div>
@@ -51,7 +51,7 @@ export function PosPaymentFooter({
         </div>
         <div className="flex justify-between text-base font-bold text-slate-900 pt-2 border-t border-slate-100">
           <span>Total Tagihan:</span>
-          <span className="text-emerald-700">{formatIDR(grandTotal)}</span>
+          <span className="text-amber-700">{formatIDR(grandTotal)}</span>
         </div>
       </div>
 
@@ -60,7 +60,7 @@ export function PosPaymentFooter({
           onClick={() => setPaymentMethod('CASH')}
           className={`p-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 border transition ${
             paymentMethod === 'CASH'
-              ? 'border-emerald-600 bg-emerald-50 text-emerald-700 font-bold'
+              ? 'border-amber-600 bg-amber-50 text-amber-700 font-bold'
               : 'border-slate-200 text-slate-600 hover:bg-slate-50'
           }`}
         >
@@ -71,7 +71,7 @@ export function PosPaymentFooter({
           onClick={() => setPaymentMethod('QRIS')}
           className={`p-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 border transition ${
             paymentMethod === 'QRIS'
-              ? 'border-emerald-600 bg-emerald-50 text-emerald-700 font-bold'
+              ? 'border-amber-600 bg-amber-50 text-amber-700 font-bold'
               : 'border-slate-200 text-slate-600 hover:bg-slate-50'
           }`}
         >
@@ -82,7 +82,7 @@ export function PosPaymentFooter({
           onClick={() => setPaymentMethod('DEBIT')}
           className={`p-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 border transition ${
             paymentMethod === 'DEBIT'
-              ? 'border-emerald-600 bg-emerald-50 text-emerald-700 font-bold'
+              ? 'border-amber-600 bg-amber-50 text-amber-700 font-bold'
               : 'border-slate-200 text-slate-600 hover:bg-slate-50'
           }`}
         >
@@ -100,7 +100,7 @@ export function PosPaymentFooter({
               value={cashGiven || ''}
               onChange={(e) => setCashGiven(Number(e.target.value))}
               placeholder={grandTotal.toString()}
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white"
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white"
             />
           </div>
 
@@ -109,7 +109,7 @@ export function PosPaymentFooter({
             <button
               type="button"
               onClick={() => setCashGiven(grandTotal)}
-              className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 font-bold border border-emerald-200 hover:bg-emerald-100 whitespace-nowrap"
+              className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 font-bold border border-amber-200 hover:bg-amber-100 whitespace-nowrap"
             >
               Uang Pas
             </button>
@@ -126,7 +126,7 @@ export function PosPaymentFooter({
           </div>
 
           {cashGiven > grandTotal && (
-            <div className="flex justify-between text-xs font-bold text-emerald-700 bg-emerald-50/60 p-2 rounded-lg border border-emerald-100">
+            <div className="flex justify-between text-xs font-bold text-amber-700 bg-amber-50/60 p-2 rounded-lg border border-amber-100">
               <span>Kembalian:</span>
               <span>{formatIDR(cashGiven - grandTotal)}</span>
             </div>
@@ -142,7 +142,7 @@ export function PosPaymentFooter({
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
             placeholder="Nama pelanggan (opsional)..."
-            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none"
           />
         </div>
       )}
@@ -150,7 +150,7 @@ export function PosPaymentFooter({
       <button
         disabled={disabled}
         onClick={onCheckout}
-        className="w-full py-3.5 bg-emerald-600 text-white rounded-xl font-bold text-sm sm:text-base hover:bg-emerald-700 active:scale-98 disabled:opacity-50 transition shadow-md flex items-center justify-center gap-2 touch-manipulation"
+        className="w-full py-3.5 bg-amber-600 text-white rounded-xl font-bold text-sm sm:text-base hover:bg-amber-700 active:scale-98 disabled:opacity-50 transition shadow-md flex items-center justify-center gap-2 touch-manipulation"
       >
         <Receipt className="w-4 h-4" />
         Bayar {formatIDR(grandTotal)}

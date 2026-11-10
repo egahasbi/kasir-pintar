@@ -93,15 +93,36 @@ export const getLocalProducts = (): Product[] => {
 };
 
 export const saveLocalProducts = (products: Product[]) => {
+  const key = getStorageKey();
   try {
-    localStorage.setItem(getStorageKey(), JSON.stringify(products));
+    localStorage.setItem(key, JSON.stringify(products));
   } catch (err) {
     console.error('Failed to save local products:', err);
   }
+
+  fetch(`/api/sync/data/${key}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ value: products }),
+  }).catch(() => {});
 };
 
 export const fetchAllProducts = async (): Promise<Product[]> => {
-  const local = getLocalProducts();
+  let local = getLocalProducts();
+  const key = getStorageKey();
+
+  // 1. Sync from server backend (cross-device sync between PC and Mobile HP)
+  try {
+    const res = await fetch(`/api/sync/data/${key}`);
+    if (res.ok) {
+      const { data } = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        localStorage.setItem(key, JSON.stringify(data));
+        local = data;
+      }
+    }
+  } catch {}
+
   if (isDummySupabase()) {
     return local;
   }

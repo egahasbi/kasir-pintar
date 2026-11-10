@@ -45,7 +45,7 @@ export default function AiSetup() {
 
         <button
           onClick={handleSave}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 shadow-sm transition"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 shadow-sm transition"
         >
           <Save className="w-4 h-4" />
           Simpan Konfigurasi
@@ -53,8 +53,8 @@ export default function AiSetup() {
       </div>
 
       {savedSuccess && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-sm flex items-center gap-2">
-          <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm flex items-center gap-2">
+          <CheckCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
           Konfigurasi sistem AI berhasil disimpan.
         </div>
       )}
@@ -73,7 +73,7 @@ export default function AiSetup() {
             <select
               value={model}
               onChange={(e) => setModel(e.target.value as any)}
-              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white"
+              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white"
             >
               <option value="gpt-4o-mini">GPT-4o Mini (Cepat & Hemat Token)</option>
               <option value="gpt-4o">GPT-4o (Akurasi Tinggi)</option>
@@ -91,7 +91,7 @@ export default function AiSetup() {
               step="0.05"
               value={temperature}
               onChange={(e) => setTemperature(parseFloat(e.target.value))}
-              className="w-full accent-emerald-600 cursor-pointer"
+              className="w-full accent-amber-600 cursor-pointer"
             />
           </div>
 
@@ -103,14 +103,14 @@ export default function AiSetup() {
               rows={4}
               value={storePersonality}
               onChange={(e) => setStorePersonality(e.target.value)}
-              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
             />
           </div>
         </div>
 
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-5">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-            <Sliders className="w-5 h-5 text-emerald-600" />
+            <Sliders className="w-5 h-5 text-amber-600" />
             <h2 className="font-bold text-slate-900 text-base">Aturan Inventori & Margin</h2>
           </div>
 
@@ -124,7 +124,7 @@ export default function AiSetup() {
               max="30"
               value={restockSafetyMarginDays}
               onChange={(e) => setRestockSafetyMarginDays(parseInt(e.target.value) || 1)}
-              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
             />
           </div>
 
@@ -138,7 +138,7 @@ export default function AiSetup() {
               max="100"
               value={marginTargetPercent}
               onChange={(e) => setMarginTargetPercent(parseInt(e.target.value) || 5)}
-              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
             />
           </div>
 
@@ -148,7 +148,7 @@ export default function AiSetup() {
                 type="checkbox"
                 checked={autoPricingEnabled}
                 onChange={(e) => setAutoPricingEnabled(e.target.checked)}
-                className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
+                className="w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500"
               />
               <span className="text-sm font-semibold text-slate-800">Aktifkan Rekomendasi Bundling Otomatis</span>
             </label>
