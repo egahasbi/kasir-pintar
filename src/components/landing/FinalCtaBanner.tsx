@@ -7,7 +7,7 @@ export const FinalCtaBanner: React.FC = () => {
     <section className="rounded-3xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white p-8 sm:p-12 text-center space-y-6 shadow-xl relative overflow-hidden">
       <div className="max-w-2xl mx-auto space-y-3 relative z-10">
         <h2 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
-          Siap Bikin Transaksi Toko Anda Jauh Lebih Cepat?
+          Siap Tingkatkan Layanan Toko Jadi Lebih Cepat & Rapi?
         </h2>
         <p className="text-xs sm:text-sm text-emerald-100 leading-relaxed font-normal">
           Daftarkan toko Anda sekarang dalam 1 menit. Dapatkan masa uji coba gratis 14 hari penuh tanpa syarat kartu kredit.

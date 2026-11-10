@@ -11,9 +11,9 @@ export const HeroBanner: React.FC = () => {
 
       <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6">
         {/* Badge Banner */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 text-xs font-extrabold tracking-wide uppercase shadow-inner">
-          <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-          <span>Aplikasi Kasir POS & Inventori Generasi Baru</span>
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 text-xs font-bold tracking-wide uppercase shadow-inner">
+          <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+          <span>Aplikasi Kasir Modern untuk Toko & Cafe</span>
         </div>
 
         {/* Big Catchy Title */}

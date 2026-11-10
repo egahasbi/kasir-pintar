@@ -9,7 +9,7 @@ export const FeatureBanners: React.FC = () => {
           Fitur Unggulan
         </span>
         <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-          Semua Senjata Kasir Canggih dalam Satu Aplikasi
+          Semua Kebutuhan Kasir dalam Satu Aplikasi
         </h2>
         <p className="text-xs sm:text-sm text-slate-500">
           Didesain sesederhana mungkin agar staf kasir dan pemilik usaha langsung bisa mengoperasikannya tanpa pelatihan rumit.

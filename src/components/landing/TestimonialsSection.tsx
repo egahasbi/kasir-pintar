@@ -7,19 +7,19 @@ export const TestimonialsSection: React.FC = () => {
       name: 'Rian Pratama',
       role: 'Owner Kopi Senja Seduh',
       city: 'Bandung',
-      text: 'Dulu antrean kopi panjang pas jam istirahat kantor karena kasir catat manual. Pake WECASH tinggal tap di HP, struk keluar cepet, antrean jadi lancar banget!',
+      text: 'Waktu antrean siang hari berkurang drastis sejak staf kasir bisa input pesanan langsung dari HP meja pelanggan. Struknya rapi dan transaksi jadi jauh lebih cepat.',
     },
     {
       name: 'Dewi Anggraini',
       role: 'Pengelola Butik Hijab Modis',
       city: 'Surabaya',
-      text: 'Scanner barcode kamera HP-nya beneran praktis! Gak perlu repot beli scanner laser kabel jutaan rupiah. Cek sisa stok ukuran baju juga gampang banget.',
+      text: 'Fitur scan barcode dari kamera HP sangat menghemat anggaran. Kami tidak perlu beli scanner laser terpisah, dan sisa stok baju langsung terlacak otomatis.',
     },
     {
       name: 'Haji Sutrisno',
       role: 'Toko Sembako Berkah Jaya',
       city: 'Semarang',
-      text: 'Laporan laba kotor hariannya sangat ngebantu. Saya jadi tahu persis barang apa yang paling laris dan berapa untung bersih tiap malam tanpa pusing ngitung nota.',
+      text: 'Laporan laba harian sangat membantu. Setiap tutup toko malam, saya tahu persis margin keuntungan dan omset hari itu tanpa hitung nota manual.',
     },
   ];
 

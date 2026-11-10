@@ -207,6 +207,13 @@ function Navigation() {
                   )}
                 </div>
 
+                <Link
+                  to={isAdmin ? '/dashboard' : '/pos'}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition shadow-xs flex items-center gap-1.5"
+                >
+                  <span>Buka Aplikasi</span>
+                </Link>
+
                 <button
                   type="button"
                   onClick={() => signOut()}
@@ -358,14 +365,6 @@ function AuthGuard({ children, adminOnly = false }: { children: React.ReactNode;
   return <>{children}</>;
 }
 
-function RootRoute() {
-  const { isAuthenticated, isAdmin } = useAuth();
-  if (isAuthenticated) {
-    return <Navigate to={isAdmin ? '/dashboard' : '/pos'} replace />;
-  }
-  return <LandingPage />;
-}
-
 export default function App() {
   return (
     <AuthProvider>
@@ -376,7 +375,7 @@ export default function App() {
               <Navigation />
               <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-20 md:pb-8">
                 <Routes>
-                  <Route path="/" element={<RootRoute />} />
+                  <Route path="/" element={<LandingPage />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/dashboard" element={<AuthGuard adminOnly><Dashboard /></AuthGuard>} />
