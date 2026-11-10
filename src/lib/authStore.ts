@@ -9,6 +9,9 @@ export interface RegisteredAccount {
   store_name?: string;
   phone?: string;
   created_at: string;
+  last_activity_at?: string;
+  is_active?: boolean;
+  admin_id?: string;
 }
 
 export const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 Menit (QA #9)
@@ -16,24 +19,86 @@ export const STORAGE_KEY_LAST_ACTIVITY = 'kasir_last_activity';
 export const STORAGE_KEY_USERS = 'kasir_registered_users';
 export const STORAGE_KEY_ACTIVE_PROFILE = 'kasir_active_profile';
 
+export const SUPER_USER_ACCOUNT: RegisteredAccount = {
+  id: 'super-admin-001',
+  email: 'admin@admin.com',
+  password: 'admin',
+  full_name: 'Super Administrator',
+  role: 'superadmin',
+  store_name: 'WECASH Platform',
+  phone: '0812-0000-0001',
+  created_at: '2026-01-01T00:00:00.000Z',
+  is_active: true,
+  last_activity_at: new Date().toISOString(),
+};
+
 export const getRegisteredUsers = (): RegisteredAccount[] => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_USERS);
-    return raw ? JSON.parse(raw) : [];
+    let users: RegisteredAccount[] = raw ? JSON.parse(raw) : [];
+
+    // Pastikan super user selalu terdaftar
+    const hasSuper = users.some((u) => u.email.toLowerCase() === SUPER_USER_ACCOUNT.email.toLowerCase());
+    if (!hasSuper) {
+      users.unshift(SUPER_USER_ACCOUNT);
+      localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
+    }
+    return users;
   } catch {
-    return [];
+    return [SUPER_USER_ACCOUNT];
   }
 };
 
 export const saveRegisteredUser = (acc: RegisteredAccount) => {
   const users = getRegisteredUsers();
   const existingIdx = users.findIndex((u) => u.email.toLowerCase() === acc.email.toLowerCase());
+  const now = new Date().toISOString();
+  const item: RegisteredAccount = {
+    ...acc,
+    is_active: acc.is_active ?? true,
+    last_activity_at: acc.last_activity_at || now,
+  };
+
   if (existingIdx >= 0) {
-    users[existingIdx] = { ...users[existingIdx], ...acc };
+    users[existingIdx] = { ...users[existingIdx], ...item };
   } else {
-    users.push(acc);
+    users.push(item);
   }
   localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
+};
+
+export const recordUserActivity = (emailOrId: string) => {
+  try {
+    const users = getRegisteredUsers();
+    const clean = emailOrId.trim().toLowerCase();
+    const user = users.find((u) => u.email.toLowerCase() === clean || u.id === emailOrId);
+    if (user) {
+      user.last_activity_at = new Date().toISOString();
+      localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
+    }
+  } catch {}
+};
+
+export const updateUserAccount = (id: string, updates: Partial<RegisteredAccount>): boolean => {
+  const users = getRegisteredUsers();
+  const idx = users.findIndex((u) => u.id === id);
+  if (idx >= 0) {
+    users[idx] = { ...users[idx], ...updates };
+    localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
+    return true;
+  }
+  return false;
+};
+
+export const deleteUserAccount = (id: string): boolean => {
+  const users = getRegisteredUsers();
+  const target = users.find((u) => u.id === id);
+  if (target?.email.toLowerCase() === SUPER_USER_ACCOUNT.email.toLowerCase()) {
+    return false; // Lindungi superadmin dari terhapus
+  }
+  const next = users.filter((u) => u.id !== id);
+  localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(next));
+  return true;
 };
 
 export const resetUserPassword = (targetEmail: string, newPass: string): boolean => {
@@ -50,32 +115,11 @@ export const resetUserPassword = (targetEmail: string, newPass: string): boolean
 export const getInitialProfile = (): UserProfile | null => {
   try {
     const activeRaw = localStorage.getItem(STORAGE_KEY_ACTIVE_PROFILE);
-    if (activeRaw) return JSON.parse(activeRaw);
+    if (activeRaw) {
+      const parsed = JSON.parse(activeRaw);
+      if (parsed && parsed.email) return parsed;
+    }
   } catch {}
-
-  const saved = localStorage.getItem('kasir_mock_role');
-  const now = new Date().toISOString();
-  if (saved === 'admin' || saved === 'owner' || saved === 'manager') {
-    return {
-      id: 'admin-user-id',
-      email: 'admin@kasirpintar.id',
-      full_name: 'Administrator Toko',
-      role: (saved as UserRole) || 'admin',
-      store_id: 'default-store',
-      created_at: now,
-      updated_at: now,
-    };
-  }
-  if (saved === 'cashier') {
-    return {
-      id: 'cashier-user-id',
-      email: 'kasir@kasirpintar.id',
-      full_name: 'Kasir Toko (Shift 1)',
-      role: 'cashier',
-      store_id: 'default-store',
-      created_at: now,
-      updated_at: now,
-    };
-  }
   return null;
 };
+

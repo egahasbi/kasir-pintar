@@ -49,7 +49,7 @@ export default function PosPage() {
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [profile?.id, profile?.email, profile?.role]);
 
   const fetchProducts = async () => {
     setLoading(true);

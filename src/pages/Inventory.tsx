@@ -21,6 +21,7 @@ import ProductFormModal from '../components/inventory/ProductFormModal';
 import StockAdjustmentModal from '../components/inventory/StockAdjustmentModal';
 import { exportToCsv } from '../lib/exportCsv';
 import { fetchAllProducts, deleteProductLocal } from '../lib/productStore';
+import { useAuth } from '../context/AuthContext';
 
 interface InventoryItem extends Product {
   daily_sales_velocity?: number;
@@ -28,6 +29,7 @@ interface InventoryItem extends Product {
 }
 
 export default function Inventory() {
+  const { profile } = useAuth();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -123,7 +125,7 @@ export default function Inventory() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchInventory]);
+  }, [fetchInventory, profile?.id, profile?.email]);
 
   const categories = useMemo(() => {
     const cats = new Set(

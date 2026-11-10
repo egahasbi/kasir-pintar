@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { getActiveAccountKey, isDummySupabase } from '../lib/accountScope';
 
 export interface StoreSettings {
   id?: string;
@@ -32,18 +33,25 @@ const DEFAULT_SETTINGS: StoreSettings = {
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
+const getSettingsKey = () => `kasir_store_settings_${getActiveAccountKey()}`;
+
+const getStoredSettings = (): StoreSettings => {
+  try {
+    const saved = localStorage.getItem(getSettingsKey());
+    return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
+};
+
 export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [settings, setSettings] = useState<StoreSettings>(() => {
-    try {
-      const saved = localStorage.getItem('kasir_store_settings');
-      return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
-    } catch {
-      return DEFAULT_SETTINGS;
-    }
-  });
+  const [settings, setSettings] = useState<StoreSettings>(getStoredSettings);
   const [loading, setLoading] = useState(false);
 
   const refreshSettings = async () => {
+    setSettings(getStoredSettings());
+    if (isDummySupabase()) return;
+
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -63,7 +71,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           receipt_footer: data.receipt_footer || DEFAULT_SETTINGS.receipt_footer,
         };
         setSettings(loaded);
-        localStorage.setItem('kasir_store_settings', JSON.stringify(loaded));
+        localStorage.setItem(getSettingsKey(), JSON.stringify(loaded));
       }
     } catch (err) {
       console.warn('Could not load store settings from DB, using fallback:', err);
@@ -79,11 +87,13 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const updateSettings = async (newSettings: Partial<StoreSettings>) => {
     const updated = { ...settings, ...newSettings };
     setSettings(updated);
-    localStorage.setItem('kasir_store_settings', JSON.stringify(updated));
+    localStorage.setItem(getSettingsKey(), JSON.stringify(updated));
+
+    if (isDummySupabase()) return { success: true };
 
     try {
       if (settings.id) {
-        const { error } = await supabase
+        await supabase
           .from('store_settings')
           .update({
             store_name: updated.store_name,
@@ -95,31 +105,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             updated_at: new Date().toISOString(),
           })
           .eq('id', settings.id);
-
-        if (error) throw error;
-      } else {
-        const { data, error } = await supabase
-          .from('store_settings')
-          .insert({
-            store_name: updated.store_name,
-            store_address: updated.store_address,
-            store_phone: updated.store_phone,
-            tax_rate: updated.tax_rate,
-            currency: updated.currency,
-            receipt_footer: updated.receipt_footer,
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-        if (data) {
-          setSettings((prev) => ({ ...prev, id: data.id }));
-        }
       }
       return { success: true };
     } catch (err: any) {
       console.error('Failed to sync store settings with DB:', err);
-      // Keep in localStorage even if network/db fails
       return { success: true };
     }
   };

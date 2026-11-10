@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { getActiveAccountKey, isDummySupabase } from './accountScope';
 
 export interface StoredTransactionItem {
   id: string;
@@ -30,11 +31,11 @@ export interface StoredTransaction {
   transaction_items: StoredTransactionItem[];
 }
 
-const STORAGE_KEY_TX = 'kasir_transactions_local';
+const getStorageKey = () => `kasir_transactions_${getActiveAccountKey()}`;
 
 export const getLocalTransactions = (): StoredTransaction[] => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_TX);
+    const raw = localStorage.getItem(getStorageKey());
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -43,7 +44,7 @@ export const getLocalTransactions = (): StoredTransaction[] => {
 
 export const saveLocalTransactions = (txs: StoredTransaction[]) => {
   try {
-    localStorage.setItem(STORAGE_KEY_TX, JSON.stringify(txs));
+    localStorage.setItem(getStorageKey(), JSON.stringify(txs));
   } catch (err) {
     console.error('Failed to save local transactions:', err);
   }
@@ -51,16 +52,15 @@ export const saveLocalTransactions = (txs: StoredTransaction[]) => {
 
 export const addTransaction = async (tx: StoredTransaction): Promise<void> => {
   const current = getLocalTransactions();
-  // Unshift so newest is first
   current.unshift(tx);
   saveLocalTransactions(current);
 
-  // Dispatch custom event so listeners (Dashboard, etc.) can update immediately
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('kasir_transaction_created', { detail: tx }));
   }
 
-  // Attempt sync to Supabase in background
+  if (isDummySupabase()) return;
+
   try {
     const isUuid = (str?: string | null) =>
       Boolean(str && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str));
@@ -106,6 +106,10 @@ export const addTransaction = async (tx: StoredTransaction): Promise<void> => {
 
 export const fetchAllTransactions = async (): Promise<StoredTransaction[]> => {
   const local = getLocalTransactions();
+  if (isDummySupabase()) {
+    return local;
+  }
+
   try {
     const { data, error } = await supabase
       .from('transactions')
@@ -154,3 +158,4 @@ export const fetchAllTransactions = async (): Promise<StoredTransaction[]> => {
   }
   return local;
 };
+

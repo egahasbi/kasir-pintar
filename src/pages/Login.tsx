@@ -29,15 +29,11 @@ export default function Login() {
       return;
     }
 
-    navigate(role === 'admin' || role === 'owner' ? '/dashboard' : '/pos');
-  };
-
-  const handleQuickDemoLogin = (targetRole: UserRole) => {
-    switchMockRole(targetRole);
-    if (targetRole === 'admin' || targetRole === 'owner') {
-      navigate('/dashboard');
+    const clean = email.trim().toLowerCase();
+    if (clean === 'admin@admin.com') {
+      navigate('/super-admin');
     } else {
-      navigate('/pos');
+      navigate('/dashboard');
     }
   };
 
@@ -51,7 +47,7 @@ export default function Login() {
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
             WE<span className="text-emerald-600">CASH</span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">Masuk sebagai Kasir atau Admin Toko</p>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">Masuk dengan Akun Toko Anda</p>
         </div>
 
         {/* Status login aktif jika ada */}
@@ -60,56 +56,18 @@ export default function Login() {
             <div>
               <div className="text-[10px] text-emerald-700 font-bold uppercase">Sedang Login:</div>
               <div className="text-xs sm:text-sm font-bold text-slate-900">
-                {profile.full_name} ({role === 'admin' ? 'Admin' : 'Kasir'})
+                {profile.full_name} ({profile.role === 'superadmin' ? 'Super Admin' : profile.role === 'cashier' ? 'Kasir' : 'Admin / Owner'})
               </div>
             </div>
             <button
               type="button"
-              onClick={() => navigate(role === 'admin' ? '/' : '/pos')}
+              onClick={() => navigate(profile.role === 'superadmin' ? '/super-admin' : '/dashboard')}
               className="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition"
             >
               Lanjutkan →
             </button>
           </div>
         )}
-
-        {/* Pilihan Cepat: Admin atau Kasir */}
-        <div className="mb-6 bg-slate-50 border border-slate-200 rounded-2xl p-3.5 sm:p-4">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-3 text-center">
-            Pilih Akses Cepat (Mode Demo / Toko)
-          </span>
-          <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-            <button
-              type="button"
-              onClick={() => handleQuickDemoLogin('admin')}
-              className="p-3.5 border-2 rounded-2xl flex flex-col items-center justify-center bg-white hover:border-emerald-500 hover:shadow-md active:scale-95 transition group text-center touch-manipulation"
-            >
-              <div className="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2 group-hover:bg-emerald-600 group-hover:text-white transition">
-                <ShieldCheck className="w-6 h-6" />
-              </div>
-              <span className="text-sm font-extrabold text-slate-900">Mode Admin</span>
-              <span className="text-[10px] text-slate-500 mt-0.5 leading-tight">Dashboard & Stok</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickDemoLogin('cashier')}
-              className="p-3.5 border-2 rounded-2xl flex flex-col items-center justify-center bg-white hover:border-blue-500 hover:shadow-md active:scale-95 transition group text-center touch-manipulation"
-            >
-              <div className="w-11 h-11 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mb-2 group-hover:bg-blue-600 group-hover:text-white transition">
-                <User className="w-6 h-6" />
-              </div>
-              <span className="text-sm font-extrabold text-slate-900">Mode Kasir</span>
-              <span className="text-[10px] text-slate-500 mt-0.5 leading-tight">POS, Scan, Struk</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="relative flex py-2 items-center mb-5">
-          <div className="flex-grow border-t border-slate-200"></div>
-          <span className="flex-shrink mx-3 text-[11px] uppercase font-semibold text-slate-400">atau login database</span>
-          <div className="flex-grow border-t border-slate-200"></div>
-        </div>
 
         {errorMsg && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs font-medium">

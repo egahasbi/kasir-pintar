@@ -3,6 +3,7 @@ import { Product, CartItem, DiscountRule, Coupon } from '../types';
 import { supabase } from '../lib/supabaseClient';
 
 import { useAuth } from './AuthContext';
+import { getActiveAccountKey } from '../lib/accountScope';
 
 interface CartContextType {
   cart: CartItem[];
@@ -28,42 +29,49 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 const DEFAULT_PPN_RATE = 0.11;
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { profile, user } = useAuth();
-  const userKey = profile?.id || user?.id || 'guest';
-  const cartStorageKey = `kasir_cart_${userKey}`;
-  const couponStorageKey = `kasir_coupon_${userKey}`;
+  const { profile, isAuthenticated } = useAuth();
+  const accountKey = getActiveAccountKey();
+  const cartStorageKey = `kasir_cart_${accountKey}`;
+  const couponStorageKey = `kasir_coupon_${accountKey}`;
 
-  const [cart, setCart] = useState<CartItem[]>(() => {
+  // Ref to prevent saving old user's cart into new user's storage during key switch
+  const activeKeyRef = React.useRef<string>(accountKey);
+
+  const getSavedCartForAccount = (key: string): CartItem[] => {
     try {
-      const saved = localStorage.getItem(cartStorageKey);
+      const saved = localStorage.getItem(`kasir_cart_${key}`);
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
     }
-  });
+  };
 
-  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(() => {
+  const getSavedCouponForAccount = (key: string): Coupon | null => {
     try {
-      const saved = localStorage.getItem(couponStorageKey);
+      const saved = localStorage.getItem(`kasir_coupon_${key}`);
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
     }
-  });
+  };
 
-  // #10 BUG: Update keranjang saat akun / role berganti
+  const [cart, setCart] = useState<CartItem[]>(() => getSavedCartForAccount(accountKey));
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(() => getSavedCouponForAccount(accountKey));
+
+  // #2 BUG FIX: Synchronize cart cleanly when user account changes
   useEffect(() => {
-    try {
-      const savedCart = localStorage.getItem(cartStorageKey);
-      setCart(savedCart ? JSON.parse(savedCart) : []);
-
-      const savedCoupon = localStorage.getItem(couponStorageKey);
-      setAppliedCoupon(savedCoupon ? JSON.parse(savedCoupon) : null);
-    } catch {
+    activeKeyRef.current = accountKey;
+    if (!isAuthenticated) {
       setCart([]);
       setAppliedCoupon(null);
+      return;
     }
-  }, [userKey]);
+
+    const loadedCart = getSavedCartForAccount(accountKey);
+    const loadedCoupon = getSavedCouponForAccount(accountKey);
+    setCart(loadedCart);
+    setAppliedCoupon(loadedCoupon);
+  }, [accountKey, isAuthenticated, profile?.id, profile?.email]);
 
   const [taxRate, setTaxRate] = useState<number>(DEFAULT_PPN_RATE);
   const [activeDiscounts] = useState<DiscountRule[]>([
@@ -90,25 +98,24 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     },
   ]);
 
+  // Only persist to localStorage if current activeKey matches
   useEffect(() => {
+    if (activeKeyRef.current !== accountKey) return;
     try {
       localStorage.setItem(cartStorageKey, JSON.stringify(cart));
-    } catch {
-      // Ignore storage errors
-    }
-  }, [cart, cartStorageKey]);
+    } catch {}
+  }, [cart, accountKey, cartStorageKey]);
 
   useEffect(() => {
+    if (activeKeyRef.current !== accountKey) return;
     try {
       if (appliedCoupon) {
         localStorage.setItem(couponStorageKey, JSON.stringify(appliedCoupon));
       } else {
         localStorage.removeItem(couponStorageKey);
       }
-    } catch {
-      // Ignore storage errors
-    }
-  }, [appliedCoupon, couponStorageKey]);
+    } catch {}
+  }, [appliedCoupon, accountKey, couponStorageKey]);
 
   const addToCart = (product: Product, quantity = 1) => {
     if (quantity <= 0) return;

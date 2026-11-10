@@ -1,7 +1,6 @@
 import { Product } from '../types';
 import { supabase } from './supabaseClient';
-
-const STORAGE_KEY_PRODUCTS = 'kasir_products_local';
+import { getActiveAccountKey, isDummySupabase } from './accountScope';
 
 export const DEFAULT_INITIAL_PRODUCTS: Product[] = [
   {
@@ -76,11 +75,14 @@ export const DEFAULT_INITIAL_PRODUCTS: Product[] = [
   },
 ];
 
+const getStorageKey = () => `kasir_products_${getActiveAccountKey()}`;
+
 export const getLocalProducts = (): Product[] => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_PRODUCTS);
+    const key = getStorageKey();
+    const raw = localStorage.getItem(key);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(DEFAULT_INITIAL_PRODUCTS));
+      localStorage.setItem(key, JSON.stringify(DEFAULT_INITIAL_PRODUCTS));
       return DEFAULT_INITIAL_PRODUCTS;
     }
     const parsed = JSON.parse(raw);
@@ -92,13 +94,18 @@ export const getLocalProducts = (): Product[] => {
 
 export const saveLocalProducts = (products: Product[]) => {
   try {
-    localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(products));
+    localStorage.setItem(getStorageKey(), JSON.stringify(products));
   } catch (err) {
     console.error('Failed to save local products:', err);
   }
 };
 
 export const fetchAllProducts = async (): Promise<Product[]> => {
+  const local = getLocalProducts();
+  if (isDummySupabase()) {
+    return local;
+  }
+
   try {
     const { data, error } = await supabase.from('products').select('*').order('name', { ascending: true });
     if (!error && data && data.length > 0) {
@@ -111,7 +118,6 @@ export const fetchAllProducts = async (): Promise<Product[]> => {
         min_stock: Number(item.min_stock_alert ?? item.min_stock ?? 5),
         min_stock_alert: Number(item.min_stock_alert ?? item.min_stock ?? 5),
       }));
-      const local = getLocalProducts();
       const map = new Map<string, Product>();
       local.forEach((p) => map.set(p.id, p));
       normalized.forEach((p) => map.set(p.id, p));
@@ -122,7 +128,7 @@ export const fetchAllProducts = async (): Promise<Product[]> => {
   } catch (err) {
     console.warn('Supabase product fetch warning:', err);
   }
-  return getLocalProducts();
+  return local;
 };
 
 export const upsertProduct = async (productData: Partial<Product> & { name: string; price: number }): Promise<Product> => {

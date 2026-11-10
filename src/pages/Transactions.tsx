@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Receipt, Printer, RefreshCw } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { useAuth } from '../context/AuthContext';
 import { ReceiptModal, ReceiptData } from '../components/pos/ReceiptModal';
 import { fetchAllTransactions, StoredTransaction } from '../lib/transactionStore';
 
 export default function Transactions() {
+  const { profile } = useAuth();
   const { settings } = useStore();
   const [transactions, setTransactions] = useState<StoredTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +30,7 @@ export default function Transactions() {
     const handleCreated = () => fetchTransactions();
     window.addEventListener('kasir_transaction_created', handleCreated);
     return () => window.removeEventListener('kasir_transaction_created', handleCreated);
-  }, []);
+  }, [profile?.id, profile?.email, profile?.role]);
 
   const formatIDR = (n: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart3, Download, RefreshCw } from 'lucide-react';
 import { exportToCsv } from '../lib/exportCsv';
+import { useAuth } from '../context/AuthContext';
 import { fetchAllTransactions, StoredTransaction } from '../lib/transactionStore';
 
 export default function Reports() {
+  const { profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<StoredTransaction[]>([]);
 
@@ -23,7 +25,7 @@ export default function Reports() {
     const handleCreated = () => fetchReports();
     window.addEventListener('kasir_transaction_created', handleCreated);
     return () => window.removeEventListener('kasir_transaction_created', handleCreated);
-  }, []);
+  }, [profile?.id, profile?.email, profile?.role]);
 
   const formatIDR = (n: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);

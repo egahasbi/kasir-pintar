@@ -7,6 +7,7 @@ import {
   getRegisteredUsers,
   saveRegisteredUser,
   resetUserPassword,
+  recordUserActivity,
   RegisteredAccount,
   INACTIVITY_TIMEOUT_MS,
   STORAGE_KEY_LAST_ACTIVITY,
@@ -20,6 +21,7 @@ interface AuthContextType {
   role: UserRole | null;
   token: string | null;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   isCashier: boolean;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -152,44 +154,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     const cleanEmail = emailInput.trim().toLowerCase();
 
-    // 1. Cek akun yang dibuat pengguna (#7 & #8)
+    // 1. Cek akun teregistrasi (termasuk super user admin@admin.com)
     const localUsers = getRegisteredUsers();
     const matched = localUsers.find((u) => u.email.toLowerCase() === cleanEmail);
 
     if (matched) {
+      if (matched.is_active === false) {
+        setIsLoading(false);
+        return { error: new Error('Akun ini telah dinonaktifkan oleh Administrator.') };
+      }
+
       if (matched.password && matched.password !== passwordInput) {
         setIsLoading(false);
         return { error: new Error('Kata sandi salah. Silakan coba kembali.') };
       }
+
+      recordUserActivity(matched.email);
       const now = new Date().toISOString();
       const newProf: UserProfile = {
         id: matched.id,
         email: matched.email,
         full_name: matched.full_name || 'Pengguna Toko',
         role: matched.role || 'owner',
-        store_id: 'default-store',
+        store_id: matched.store_name || 'default-store',
         created_at: matched.created_at || now,
         updated_at: now,
       };
       setProfile(newProf);
-      localStorage.setItem('kasir_mock_role', matched.role || 'admin');
+      localStorage.setItem('kasir_mock_role', matched.role);
       setIsLoading(false);
       return { error: null };
     }
 
-    // 2. Demo accounts
-    if (cleanEmail === 'admin@kasirpintar.id' || cleanEmail === 'admin@toko.com') {
-      switchMockRole('admin');
-      setIsLoading(false);
-      return { error: null };
-    }
-    if (cleanEmail === 'kasir@kasirpintar.id' || cleanEmail === 'kasir@toko.com') {
-      switchMockRole('cashier');
-      setIsLoading(false);
-      return { error: null };
-    }
-
-    // 3. Supabase Auth
+    // 2. Supabase Auth (untuk user cloud)
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
@@ -200,7 +197,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(data.session);
         setUser(data.user);
         const prof = await fetchProfile(data.user.id);
-        if (prof) setProfile(prof);
+        if (prof) {
+          setProfile(prof);
+          recordUserActivity(prof.email);
+        }
         setIsLoading(false);
         return { error: null };
       }
@@ -222,17 +222,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const switchMockRole = (targetRole: UserRole) => {
+    if (!profile) return;
+    const updated = { ...profile, role: targetRole };
+    setProfile(updated);
     localStorage.setItem('kasir_mock_role', targetRole);
-    const now = new Date().toISOString();
-    setProfile({
-      id: targetRole === 'admin' ? 'admin-user' : 'cashier-user',
-      email: targetRole === 'admin' ? 'admin@kasirpintar.id' : 'kasir@kasirpintar.id',
-      full_name: targetRole === 'admin' ? 'Admin Toko' : 'Kasir Shift 1',
-      role: targetRole,
-      store_id: 'default-store',
-      created_at: now,
-      updated_at: now,
-    });
   };
 
   const signOut = async () => {
@@ -251,7 +244,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const role: UserRole | null = profile?.role ?? null;
-  const isAdmin = role === 'admin' || role === 'owner' || role === 'manager';
+  const isSuperAdmin = role === 'superadmin' || profile?.email === 'admin@admin.com';
+  const isAdmin = role === 'admin' || role === 'owner' || role === 'manager' || isSuperAdmin;
   const isCashier = role === 'cashier' || isAdmin;
   const isAuthenticated = !!profile || !!session;
   const token = session?.access_token ?? null;
@@ -264,6 +258,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       role,
       token,
       isAdmin,
+      isSuperAdmin,
       isCashier,
       isAuthenticated,
       isLoading,
@@ -274,7 +269,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       registerAccount,
       resetPasswordLocal,
     }),
-    [session, user, profile, role, token, isAdmin, isCashier, isAuthenticated, isLoading]
+    [session, user, profile, role, token, isAdmin, isSuperAdmin, isCashier, isAuthenticated, isLoading]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
