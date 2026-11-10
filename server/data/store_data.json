@@ -1,0 +1,148 @@
+{
+  "kasir_products_acc_micabuku_gmail_com": [
+    {
+      "id": "prod-1794300209119",
+      "sku": "SKU-85206",
+      "barcode": null,
+      "name": "Y",
+      "category": "Umum",
+      "cost_price": 0,
+      "selling_price": 600,
+      "price": 600,
+      "stock": 10,
+      "min_stock_alert": 5,
+      "min_stock": 5,
+      "is_active": true,
+      "created_at": "2026-11-10T08:43:29.119Z",
+      "updated_at": "2026-11-10T08:43:29.119Z"
+    },
+    {
+      "id": "prod-1794299199190",
+      "sku": "SKU-25167",
+      "barcode": "22344440001",
+      "name": "Buku Alfabet",
+      "category": "Umum",
+      "cost_price": 5000000,
+      "selling_price": 12000,
+      "price": 12000,
+      "stock": 498,
+      "min_stock_alert": 1,
+      "min_stock": 1,
+      "is_active": true,
+      "created_at": "2026-11-10T08:27:37.734Z",
+      "updated_at": "2026-11-10T08:29:40.883Z"
+    },
+    {
+      "id": "prod-001",
+      "sku": "SKU-001",
+      "barcode": "8999999001",
+      "name": "Kopi Susu Gula Aren 250ml",
+      "category": "Minuman",
+      "cost_price": 10000,
+      "selling_price": 18000,
+      "price": 18000,
+      "stock": 25,
+      "min_stock_alert": 5,
+      "min_stock": 5,
+      "is_active": true
+    },
+    {
+      "id": "prod-002",
+      "sku": "SKU-002",
+      "barcode": "8999999002",
+      "name": "Beras Premium Ramos 5kg",
+      "category": "Sembako",
+      "cost_price": 60000,
+      "selling_price": 72000,
+      "price": 72000,
+      "stock": 14,
+      "min_stock_alert": 5,
+      "min_stock": 5,
+      "is_active": true
+    },
+    {
+      "id": "prod-003",
+      "sku": "SKU-003",
+      "barcode": "8999999003",
+      "name": "Minyak Goreng Sawit 2L",
+      "category": "Sembako",
+      "cost_price": 28000,
+      "selling_price": 34000,
+      "price": 34000,
+      "stock": 18,
+      "min_stock_alert": 4,
+      "min_stock": 4,
+      "is_active": true
+    },
+    {
+      "id": "prod-004",
+      "sku": "SKU-004",
+      "barcode": "8999999004",
+      "name": "Roti Bakar Coklat Keju",
+      "category": "Makanan",
+      "cost_price": 12000,
+      "selling_price": 20000,
+      "price": 20000,
+      "stock": 10,
+      "min_stock_alert": 3,
+      "min_stock": 3,
+      "is_active": true
+    },
+    {
+      "id": "prod-005",
+      "sku": "SKU-005",
+      "barcode": "8999999005",
+      "name": "Teh Melati Botol 450ml",
+      "category": "Minuman",
+      "cost_price": 3500,
+      "selling_price": 5500,
+      "price": 5500,
+      "stock": 30,
+      "min_stock_alert": 8,
+      "min_stock": 8,
+      "is_active": true
+    }
+  ],
+  "kasir_transactions_acc_micabuku_gmail_com": [
+    {
+      "id": "tx-1794299380864",
+      "invoice_number": "INV-380864",
+      "cashier_id": "user-1794299032197",
+      "total_amount": 52000,
+      "tax_amount": 5720,
+      "discount_amount": 0,
+      "final_amount": 57720,
+      "payment_method": "cash",
+      "payment_status": "completed",
+      "amount_paid": 60000,
+      "change_given": 2280,
+      "created_at": "2026-11-10T08:29:40.864Z",
+      "transaction_items": [
+        {
+          "id": "item-1794299380864-prod-1794299199190",
+          "product_id": "prod-1794299199190",
+          "quantity": 2,
+          "unit_cost": 5000000,
+          "unit_price": 12000,
+          "subtotal": 24000,
+          "products": {
+            "name": "Buku Alfabet",
+            "cost_price": 5000000
+          }
+        },
+        {
+          "id": "item-1794299380864-manual-1794299331726-3cwz",
+          "product_id": "manual-1794299331726-3cwz",
+          "quantity": 4,
+          "unit_cost": 7000,
+          "unit_price": 7000,
+          "subtotal": 28000,
+          "products": {
+            "name": "Buku Angka",
+            "cost_price": 7000
+          }
+        }
+      ]
+    }
+  ]
+}

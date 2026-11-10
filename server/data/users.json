@@ -5,11 +5,11 @@
     "password": "admin",
     "full_name": "Super Administrator",
     "role": "superadmin",
-    "store_name": "KASIRKITA Platform",
+    "store_name": "WECASH Platform",
     "phone": "0812-0000-0001",
     "created_at": "2026-01-01T00:00:00.000Z",
     "is_active": true,
-    "last_activity_at": "2026-11-10T03:51:29.927Z"
+    "last_activity_at": "2026-11-10T02:41:21.884Z"
   },
   {
     "id": "user-1794282668794",
@@ -21,7 +21,7 @@
     "phone": "12131",
     "created_at": "2026-11-10T03:51:08.794Z",
     "is_active": true,
-    "last_activity_at": "2026-11-10T03:52:36.881Z"
+    "last_activity_at": "2026-11-10T03:52:07.643Z"
   },
   {
     "id": "user-1794278655318",
@@ -46,5 +46,37 @@
     "created_at": "2026-11-10T02:46:01.945Z",
     "is_active": true,
     "last_activity_at": "2026-11-10T02:49:39.198Z"
+  },
+  {
+    "id": "user-1794299032197",
+    "email": "micabuku@gmail.com",
+    "password": "micabuku",
+    "full_name": "Mica",
+    "role": "admin",
+    "store_name": "Mica Buku",
+    "phone": "081122",
+    "created_at": "2026-11-10T08:23:52.197Z",
+    "is_active": true,
+    "last_activity_at": "2026-11-10T08:24:07.210Z"
+  },
+  {
+    "id": "user-1794276949486",
+    "email": "eganteng@cihuy.com",
+    "password": "111111",
+    "full_name": "Eganteng",
+    "role": "admin",
+    "store_name": "Kopiku",
+    "phone": "08111111",
+    "created_at": "2026-11-10T02:15:49.486Z"
+  },
+  {
+    "id": "user-1794277136601",
+    "email": "egadua@cihuy.com",
+    "password": "111111",
+    "full_name": "egadua",
+    "role": "admin",
+    "store_name": "Dua Toko",
+    "phone": "08111111",
+    "created_at": "2026-11-10T02:18:56.601Z"
   }
 ]
