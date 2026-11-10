@@ -90,9 +90,9 @@ export default function Register() {
     <div className="min-h-[85vh] flex items-center justify-center py-6 px-3">
       <div className="max-w-md w-full bg-white border rounded-3xl shadow-xl p-6 sm:p-8">
         <div className="text-center mb-5">
-          <div className="w-12 h-12 mx-auto mb-2 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-black text-xl">W</div>
-          <h1 className="text-xl font-black">Daftar WE<span className="text-emerald-600">CASH</span></h1>
-          <p className="text-xs text-slate-500 mt-1">Mulai kelola kasir dan stok toko Anda. Coba Gratis 14 Hari.</p>
+          <div className="w-12 h-12 mx-auto mb-2 rounded-2xl bg-emerald-700 text-white flex items-center justify-center font-black text-xl">K</div>
+          <h1 className="text-xl font-black">Daftar KASIR<span className="text-emerald-700">KITA</span></h1>
+          <p className="text-xs text-slate-500 mt-1">Mulai kelola kasir dan stok kafe / toko Anda. Coba Gratis 14 Hari.</p>
         </div>
 
         {errorMsg && <div className="p-2 mb-3 bg-red-50 text-red-600 text-xs rounded">{errorMsg}</div>}

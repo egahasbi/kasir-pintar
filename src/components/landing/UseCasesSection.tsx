@@ -36,7 +36,7 @@ export const UseCasesSection: React.FC = () => {
           Satu Aplikasi untuk Berbagai Bidang Usaha
         </h2>
         <p className="text-xs sm:text-sm text-slate-500">
-          Apapun bisnis yang Anda jalankan, WECASH menyesuaikan dengan alur penjualan Anda.
+          Apapun bisnis yang Anda jalankan, KASIRKITA menyesuaikan dengan alur penjualan Anda.
         </p>
       </div>
 

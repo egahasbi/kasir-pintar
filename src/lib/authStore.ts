@@ -25,7 +25,7 @@ export const SUPER_USER_ACCOUNT: RegisteredAccount = {
   password: 'admin',
   full_name: 'Super Administrator',
   role: 'superadmin',
-  store_name: 'WECASH Platform',
+  store_name: 'KASIRKITA Platform',
   phone: '0812-0000-0001',
   created_at: '2026-01-01T00:00:00.000Z',
   is_active: true,

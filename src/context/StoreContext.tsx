@@ -23,7 +23,7 @@ interface StoreContextType {
 }
 
 const DEFAULT_SETTINGS: StoreSettings = {
-  store_name: 'WECASH Store',
+  store_name: 'KASIRKITA Cafe & Resto',
   store_address: 'Jl. Bisnis Pintar No. 8',
   store_phone: '0812-3456-7890',
   tax_rate: 0.11,

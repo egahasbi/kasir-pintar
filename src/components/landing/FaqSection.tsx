@@ -6,8 +6,8 @@ export const FaqSection: React.FC = () => {
 
   const faqs = [
     {
-      q: 'Printer apa saja yang didukung oleh WECASH?',
-      a: 'WECASH mendukung semua printer thermal Bluetooth & USB standar ukuran kertas 58mm maupun 80mm. Anda cukup menghubungkan printer ke HP atau laptop, lalu tekan Cetak Struk saat transaksi selesai.',
+      q: 'Printer apa saja yang didukung oleh KASIRKITA?',
+      a: 'KASIRKITA mendukung semua printer thermal Bluetooth & USB standar ukuran kertas 58mm maupun 80mm. Anda cukup menghubungkan printer ke HP atau laptop, lalu tekan Cetak Struk saat transaksi selesai.',
     },
     {
       q: 'Bisa dijalankan di HP apa saja?',
@@ -19,7 +19,7 @@ export const FaqSection: React.FC = () => {
     },
     {
       q: 'Apakah data toko saya aman dan terpisah dari toko lain?',
-      a: 'Sangat aman. WECASH menggunakan arsitektur database multi-tenant dengan Row Level Security terenkripsi. Data stok, harga modal, dan omset toko Anda 100% terisolasi dan hanya bisa diakses oleh Anda.',
+      a: 'Sangat aman. KASIRKITA menggunakan arsitektur database multi-tenant dengan Row Level Security terenkripsi. Data stok, harga modal, dan omset toko Anda 100% terisolasi dan hanya bisa diakses oleh Anda.',
     },
   ];
 
@@ -30,7 +30,7 @@ export const FaqSection: React.FC = () => {
           Pertanyaan yang Sering Diajukan
         </h2>
         <p className="text-xs sm:text-sm text-slate-500">
-          Semua jawaban atas keraguan Anda sebelum mulai menggunakan WECASH.
+          Semua jawaban atas keraguan Anda sebelum mulai menggunakan KASIRKITA.
         </p>
       </div>
 

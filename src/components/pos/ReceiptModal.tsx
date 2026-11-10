@@ -244,7 +244,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
             <div className="text-center mt-5 text-[10px] text-gray-500 space-y-1">
               <p className="font-semibold text-gray-700">Terima kasih atas kunjungan Anda!</p>
               <p>Barang yang sudah dibeli tidak dapat ditukar atau dikembalikan.</p>
-              <p className="text-[9px] text-gray-400">Powered by WECASH</p>
+              <p className="text-[9px] text-gray-400">Powered by KASIRKITA</p>
             </div>
           </div>
         </div>

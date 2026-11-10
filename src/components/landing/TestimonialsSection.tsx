@@ -33,7 +33,7 @@ export const TestimonialsSection: React.FC = () => {
           Dipercaya Ratusan Usaha di Indonesia
         </h2>
         <p className="text-xs sm:text-sm text-slate-500">
-          Dengarkan pengalaman nyata pemilik usaha yang omset dan operasionalnya meningkat bersama WECASH.
+          Dengarkan pengalaman nyata pemilik usaha yang omset dan operasionalnya meningkat bersama KASIRKITA.
         </p>
       </div>
 

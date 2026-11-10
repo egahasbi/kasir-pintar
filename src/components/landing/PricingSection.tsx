@@ -25,7 +25,7 @@ export const PricingSection: React.FC = () => {
             <div className="text-3xl font-black text-slate-900">
               Rp 0 <span className="text-xs text-slate-400 font-normal">/ 14 Hari</span>
             </div>
-            <p className="text-xs text-slate-500">Coba seluruh fitur lengkap WECASH tanpa dipungut biaya sepeser pun.</p>
+            <p className="text-xs text-slate-500">Coba seluruh fitur lengkap KASIRKITA tanpa dipungut biaya sepeser pun.</p>
             <ul className="text-xs space-y-2 text-slate-700 border-t border-slate-100 pt-3">
               <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" /> Transaksi Kasir POS Realtime</li>
               <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" /> Scan Barcode Kamera HP</li>

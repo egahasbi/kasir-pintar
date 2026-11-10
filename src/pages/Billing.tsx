@@ -31,7 +31,7 @@ export default function Billing() {
         <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full border">
           Status: {settings.subscription_plan?.toUpperCase() || 'TRIAL'} (Aktif)
         </span>
-        <h1 className="text-2xl font-black text-slate-900">Upgrade Paket WECASH</h1>
+        <h1 className="text-2xl font-black text-slate-900">Upgrade Paket KASIRKITA</h1>
         <p className="text-xs text-slate-500 max-w-sm mx-auto">Tingkatkan performa kasir toko Anda tanpa batas transaksi.</p>
       </div>
 

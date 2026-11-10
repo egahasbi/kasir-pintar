@@ -52,10 +52,10 @@ export default function LandingPage() {
       {/* 10. Footer */}
       <footer className="border-t border-slate-200 pt-8 pb-6 text-center text-xs text-slate-500 space-y-2">
         <div className="font-bold text-slate-800 text-sm">
-          WE<span className="text-emerald-600">CASH</span> • Solusi Kasir Pintar & Modern
+          KASIR<span className="text-emerald-700">KITA</span> • Solusi Kasir Pintar & Modern
         </div>
-        <p>Dirancang dengan standar modern untuk memajukan bisnis dan UMKM Indonesia.</p>
-        <p className="text-[11px] text-slate-400">© {new Date().getFullYear()} WECASH. Seluruh hak cipta dilindungi undang-undang.</p>
+        <p>Dirancang dengan standar modern untuk memajukan bisnis kafe dan UMKM Indonesia.</p>
+        <p className="text-[11px] text-slate-400">© {new Date().getFullYear()} KASIRKITA. Seluruh hak cipta dilindungi undang-undang.</p>
       </footer>
     </div>
   );

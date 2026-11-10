@@ -56,11 +56,11 @@ function Navigation() {
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
           <div className="flex items-center gap-4 sm:gap-6">
             <Link to={isAdmin ? '/' : '/pos'} className="flex items-center gap-2">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-base sm:text-lg shadow-sm">
-                W
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-black text-base sm:text-lg shadow-sm">
+                K
               </div>
               <span className="font-extrabold text-slate-900 text-base sm:text-lg tracking-tight">
-                WE<span className="text-emerald-600">CASH</span>
+                KASIR<span className="text-emerald-700">KITA</span>
               </span>
             </Link>
 
@@ -357,7 +357,7 @@ export default function App() {
       <StoreProvider>
         <CartProvider>
           <BrowserRouter>
-            <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+            <div className="min-h-screen bg-[#FAF7F2] text-stone-900 flex flex-col">
               <Navigation />
               <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-20 md:pb-8">
                 <Routes>

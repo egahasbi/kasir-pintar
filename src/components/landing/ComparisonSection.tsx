@@ -6,10 +6,10 @@ export const ComparisonSection: React.FC = () => {
     <section className="space-y-6">
       <div className="text-center space-y-2 max-w-xl mx-auto">
         <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-          Kenapa Beralih ke WECASH?
+          Kenapa Beralih ke KASIRKITA?
         </h2>
         <p className="text-xs sm:text-sm text-slate-500">
-          Bandingkan biaya dan kerumitan sistem kasir konvensional dengan solusi cerdas WECASH.
+          Bandingkan biaya dan kerumitan sistem kasir konvensional dengan solusi cerdas KASIRKITA.
         </p>
       </div>
 
@@ -41,11 +41,11 @@ export const ComparisonSection: React.FC = () => {
           </ul>
         </div>
 
-        {/* Dengan WECASH */}
+        {/* Dengan KASIRKITA */}
         <div className="p-6 rounded-3xl bg-emerald-50/50 border-2 border-emerald-500/50 space-y-4 shadow-sm">
           <div className="flex items-center gap-2 text-emerald-800 font-extrabold text-sm uppercase tracking-wider">
             <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-            <span>Dengan WECASH (Praktis, Cepat, Hemat)</span>
+            <span>Dengan KASIRKITA (Praktis, Cepat, Hemat)</span>
           </div>
 
           <ul className="space-y-3 text-xs sm:text-sm text-slate-700 font-medium">

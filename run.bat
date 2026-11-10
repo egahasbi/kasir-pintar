@@ -1,9 +1,9 @@
 @echo off
-title WECASH - Kasir Pintar AI POS
-color 0A
+title KASIRKITA - Kasir Pintar & Manajemen Kafe
+color 06
 
 echo ========================================================
-echo         WECASH - KASIR PINTAR AI POS PLATFORM          
+echo        KASIRKITA - KASIR PINTAR & MANAJEMEN KAFE        
 echo ========================================================
 echo.
 

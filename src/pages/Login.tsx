@@ -41,13 +41,13 @@ export default function Login() {
     <div className="min-h-[85vh] flex items-center justify-center py-6 px-3 sm:px-6">
       <div className="max-w-md w-full bg-white border border-slate-200 rounded-3xl shadow-xl p-5 sm:p-8">
         <div className="text-center mb-6">
-          <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center font-extrabold text-2xl shadow-md">
-            W
+          <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-tr from-emerald-700 to-amber-600 text-white flex items-center justify-center font-extrabold text-2xl shadow-md">
+            K
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            WE<span className="text-emerald-600">CASH</span>
+            KASIR<span className="text-emerald-700">KITA</span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">Masuk dengan Akun Toko Anda</p>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">Sistem Kasir & Manajemen Kafe Modern</p>
         </div>
 
         {/* Status login aktif jika ada */}
