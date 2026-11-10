@@ -1,7 +1,17 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useRef } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { createClient } from '@supabase/supabase-js';
 import { UserProfile, UserRole } from '../types';
+import {
+  getInitialProfile,
+  getRegisteredUsers,
+  saveRegisteredUser,
+  resetUserPassword,
+  RegisteredAccount,
+  INACTIVITY_TIMEOUT_MS,
+  STORAGE_KEY_LAST_ACTIVITY,
+  STORAGE_KEY_ACTIVE_PROFILE,
+} from '../lib/authStore';
 
 interface AuthContextType {
   session: Session | null;
@@ -17,6 +27,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   switchMockRole: (role: UserRole) => void;
+  registerAccount: (account: RegisteredAccount) => void;
+  resetPasswordLocal: (email: string, newPass: string) => boolean;
 }
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
@@ -29,56 +41,51 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(() => {
-    const saved = localStorage.getItem('kasir_mock_role');
-    const now = new Date().toISOString();
-    if (saved === 'admin' || saved === 'owner' || saved === 'manager') {
-      return {
-        id: 'admin-user-id',
-        email: 'admin@kasirpintar.id',
-        full_name: 'Administrator Toko',
-        role: saved as UserRole,
-        store_id: 'default-store',
-        created_at: now,
-        updated_at: now
-      };
-    }
-    if (saved === 'cashier') {
-      return {
-        id: 'cashier-user-id',
-        email: 'kasir@kasirpintar.id',
-        full_name: 'Kasir Toko (Shift 1)',
-        role: 'cashier',
-        store_id: 'default-store',
-        created_at: now,
-        updated_at: now
-      };
-    }
-    // If logged out or no preference saved, do not auto-login
-    if (!saved || saved === 'logged_out') {
-      return null;
-    }
-    return null;
-  });
+  const [profile, setProfile] = useState<UserProfile | null>(getInitialProfile);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const lastActivityRef = useRef<number>(Date.now());
+
+  useEffect(() => {
+    if (profile) {
+      localStorage.setItem(STORAGE_KEY_ACTIVE_PROFILE, JSON.stringify(profile));
+    } else {
+      localStorage.removeItem(STORAGE_KEY_ACTIVE_PROFILE);
+    }
+  }, [profile]);
+
+  // #9 REVISI: Inactivity timeout 30 Menit
+  useEffect(() => {
+    const updateActivity = () => {
+      const now = Date.now();
+      lastActivityRef.current = now;
+      try {
+        localStorage.setItem(STORAGE_KEY_LAST_ACTIVITY, String(now));
+      } catch {}
+    };
+
+    updateActivity();
+    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+    events.forEach((ev) => window.addEventListener(ev, updateActivity, { passive: true }));
+
+    const timer = setInterval(() => {
+      const last = Number(localStorage.getItem(STORAGE_KEY_LAST_ACTIVITY) || lastActivityRef.current);
+      if (Date.now() - last >= INACTIVITY_TIMEOUT_MS && profile) {
+        signOut();
+      }
+    }, 15000);
+
+    return () => {
+      events.forEach((ev) => window.removeEventListener(ev, updateActivity));
+      clearInterval(timer);
+    };
+  }, [profile]);
 
   const fetchProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching user profile:', error.message);
-        return null;
-      }
-      return data as UserProfile;
-    } catch (err) {
-      console.error('Unexpected error fetching profile:', err);
-      return null;
-    }
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+      if (!error && data) return data as UserProfile;
+    } catch {}
+    return null;
   };
 
   const refreshProfile = async () => {
@@ -112,15 +119,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, currentSession) => {
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-
-        if (currentSession?.user) {
-          const prof = await fetchProfile(currentSession.user.id);
-          setProfile(prof);
-        } else {
+      async (event, currentSession) => {
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          setUser(null);
           setProfile(null);
+        } else if (currentSession?.user) {
+          setSession(currentSession);
+          setUser(currentSession.user);
+          const prof = await fetchProfile(currentSession.user.id);
+          if (prof) setProfile(prof);
         }
         setIsLoading(false);
       }
@@ -132,17 +140,85 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const registerAccount = (acc: RegisteredAccount) => {
+    saveRegisteredUser(acc);
+  };
+
+  const resetPasswordLocal = (email: string, newPass: string): boolean => {
+    return resetUserPassword(email, newPass);
+  };
+
+  const signIn = async (emailInput: string, passwordInput: string): Promise<{ error: Error | null }> => {
     setIsLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) {
+    const cleanEmail = emailInput.trim().toLowerCase();
+
+    // 1. Cek akun yang dibuat pengguna (#7 & #8)
+    const localUsers = getRegisteredUsers();
+    const matched = localUsers.find((u) => u.email.toLowerCase() === cleanEmail);
+
+    if (matched) {
+      if (matched.password && matched.password !== passwordInput) {
+        setIsLoading(false);
+        return { error: new Error('Kata sandi salah. Silakan coba kembali.') };
+      }
+      const now = new Date().toISOString();
+      const newProf: UserProfile = {
+        id: matched.id,
+        email: matched.email,
+        full_name: matched.full_name || 'Pengguna Toko',
+        role: matched.role || 'owner',
+        store_id: 'default-store',
+        created_at: matched.created_at || now,
+        updated_at: now,
+      };
+      setProfile(newProf);
+      localStorage.setItem('kasir_mock_role', matched.role || 'admin');
       setIsLoading(false);
-      return { error };
+      return { error: null };
     }
-    return { error: null };
+
+    // 2. Demo accounts
+    if (cleanEmail === 'admin@kasirpintar.id' || cleanEmail === 'admin@toko.com') {
+      switchMockRole('admin');
+      setIsLoading(false);
+      return { error: null };
+    }
+    if (cleanEmail === 'kasir@kasirpintar.id' || cleanEmail === 'kasir@toko.com') {
+      switchMockRole('cashier');
+      setIsLoading(false);
+      return { error: null };
+    }
+
+    // 3. Supabase Auth
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password: passwordInput,
+      });
+
+      if (!error && data.user) {
+        setSession(data.session);
+        setUser(data.user);
+        const prof = await fetchProfile(data.user.id);
+        if (prof) setProfile(prof);
+        setIsLoading(false);
+        return { error: null };
+      }
+
+      if (error) {
+        let msg = 'Email atau kata sandi tidak cocok. Silakan periksa kembali.';
+        if (error.message.includes('Invalid login credentials')) {
+          msg = 'Email atau kata sandi salah. Silakan periksa kembali atau daftar baru.';
+        }
+        setIsLoading(false);
+        return { error: new Error(msg) };
+      }
+    } catch {}
+
+    setIsLoading(false);
+    return {
+      error: new Error('Akun dengan email ini belum terdaftar. Silakan klik menu Daftar untuk membuat akun baru.'),
+    };
   };
 
   const switchMockRole = (targetRole: UserRole) => {
@@ -155,7 +231,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       role: targetRole,
       store_id: 'default-store',
       created_at: now,
-      updated_at: now
+      updated_at: now,
     });
   };
 
@@ -167,6 +243,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.warn('SignOut error:', e);
     }
     localStorage.setItem('kasir_mock_role', 'logged_out');
+    localStorage.removeItem(STORAGE_KEY_ACTIVE_PROFILE);
     setSession(null);
     setUser(null);
     setProfile(null);
@@ -194,6 +271,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signOut,
       refreshProfile,
       switchMockRole,
+      registerAccount,
+      resetPasswordLocal,
     }),
     [session, user, profile, role, token, isAdmin, isCashier, isAuthenticated, isLoading]
   );
@@ -208,3 +287,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+export default AuthContext;

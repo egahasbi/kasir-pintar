@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useMemo, ReactNo
 import { Product, CartItem, DiscountRule, Coupon } from '../types';
 import { supabase } from '../lib/supabaseClient';
 
+import { useAuth } from './AuthContext';
+
 interface CartContextType {
   cart: CartItem[];
   addToCart: (product: Product, quantity?: number) => void;
@@ -23,14 +25,17 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const STORAGE_KEY_CART = 'kasir_pintar_cart';
-const STORAGE_KEY_COUPON = 'kasir_pintar_coupon';
 const DEFAULT_PPN_RATE = 0.11;
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { profile, user } = useAuth();
+  const userKey = profile?.id || user?.id || 'guest';
+  const cartStorageKey = `kasir_cart_${userKey}`;
+  const couponStorageKey = `kasir_coupon_${userKey}`;
+
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY_CART);
+      const saved = localStorage.getItem(cartStorageKey);
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -39,12 +44,26 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY_COUPON);
+      const saved = localStorage.getItem(couponStorageKey);
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
     }
   });
+
+  // #10 BUG: Update keranjang saat akun / role berganti
+  useEffect(() => {
+    try {
+      const savedCart = localStorage.getItem(cartStorageKey);
+      setCart(savedCart ? JSON.parse(savedCart) : []);
+
+      const savedCoupon = localStorage.getItem(couponStorageKey);
+      setAppliedCoupon(savedCoupon ? JSON.parse(savedCoupon) : null);
+    } catch {
+      setCart([]);
+      setAppliedCoupon(null);
+    }
+  }, [userKey]);
 
   const [taxRate, setTaxRate] = useState<number>(DEFAULT_PPN_RATE);
   const [activeDiscounts] = useState<DiscountRule[]>([
@@ -73,23 +92,23 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY_CART, JSON.stringify(cart));
+      localStorage.setItem(cartStorageKey, JSON.stringify(cart));
     } catch {
       // Ignore storage errors
     }
-  }, [cart]);
+  }, [cart, cartStorageKey]);
 
   useEffect(() => {
     try {
       if (appliedCoupon) {
-        localStorage.setItem(STORAGE_KEY_COUPON, JSON.stringify(appliedCoupon));
+        localStorage.setItem(couponStorageKey, JSON.stringify(appliedCoupon));
       } else {
-        localStorage.removeItem(STORAGE_KEY_COUPON);
+        localStorage.removeItem(couponStorageKey);
       }
     } catch {
       // Ignore storage errors
     }
-  }, [appliedCoupon]);
+  }, [appliedCoupon, couponStorageKey]);
 
   const addToCart = (product: Product, quantity = 1) => {
     if (quantity <= 0) return;

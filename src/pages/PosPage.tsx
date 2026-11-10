@@ -10,6 +10,8 @@ import { PosCartItems } from '../components/pos/PosCartItems';
 import { PosPaymentFooter } from '../components/pos/PosPaymentFooter';
 import { ReceiptModal, ReceiptData } from '../components/pos/ReceiptModal';
 import { Product } from '../types';
+import { fetchAllProducts, deductProductsStock } from '../lib/productStore';
+import { addTransaction, StoredTransaction } from '../lib/transactionStore';
 
 export default function PosPage() {
   const { profile, user } = useAuth();
@@ -52,13 +54,8 @@ export default function PosPage() {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('name', { ascending: true });
-
-      if (error) throw error;
-      setProducts((data as Product[]) || []);
+      const prods = await fetchAllProducts();
+      setProducts(prods || []);
     } catch (err) {
       console.error('Error fetching POS items:', err);
     } finally {
@@ -122,61 +119,50 @@ export default function PosPage() {
       change: change > 0 ? change : 0,
     };
 
+    const txId = `tx-${Date.now()}`;
+    receipt.transactionId = txId;
+
+    const storedTx: StoredTransaction = {
+      id: txId,
+      invoice_number: invoiceNum,
+      cashier_id: user?.id || profile?.id || 'cashier-user-id',
+      customer_name: customerName.trim() || undefined,
+      total_amount: subtotal,
+      tax_amount: taxAmount,
+      discount_amount: totalDiscount,
+      final_amount: grandTotal,
+      payment_method: paymentMethod.toLowerCase(),
+      payment_status: 'completed',
+      amount_paid: effectiveCash,
+      change_given: change > 0 ? change : 0,
+      created_at: new Date().toISOString(),
+      transaction_items: cart.map((i) => ({
+        id: `item-${Date.now()}-${i.product.id}`,
+        product_id: i.product.id,
+        quantity: i.quantity,
+        unit_cost: i.product.cost_price || 0,
+        unit_price: i.product.price,
+        subtotal: i.product.price * i.quantity,
+        products: {
+          name: i.product.name,
+          cost_price: i.product.cost_price || 0,
+        },
+      })),
+    };
+
     try {
-      // 1. Simpan Transaksi ke Supabase (Database riil)
-      const mappedMethod = paymentMethod.toLowerCase();
-      const cashierUuid = user?.id || profile?.id;
+      // 1. Simpan Transaksi (Lokal + Cloud sync)
+      await addTransaction(storedTx);
 
-      // Filter: hanya item ber-UUID asli yang link ke DB products
-      const isUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-
-      const { data: createdTx, error: txErr } = await supabase
-        .from('transactions')
-        .insert({
-          invoice_number: invoiceNum,
-          cashier_id: cashierUuid && isUuid(cashierUuid) ? cashierUuid : null,
-          customer_name: customerName.trim() || null,
-          total_amount: subtotal,
-          tax_amount: taxAmount,
-          discount_amount: totalDiscount,
-          final_amount: grandTotal,
-          payment_method: mappedMethod,
-          payment_status: 'completed',
-          amount_paid: effectiveCash,
-          change_given: change > 0 ? change : 0,
-        })
-        .select()
-        .single();
-
-      if (!txErr && createdTx) {
-        receipt.transactionId = createdTx.id;
-
-        // 2. Insert transaction items
-        const validDbItems = cart.filter((i) => isUuid(i.product.id));
-        if (validDbItems.length > 0) {
-          const itemsPayload = validDbItems.map((i) => ({
-            transaction_id: createdTx.id,
-            product_id: i.product.id,
-            quantity: i.quantity,
-            unit_cost: i.product.cost_price || 0,
-            unit_price: i.product.price,
-            subtotal: i.product.price * i.quantity,
-          }));
-
-          await supabase.from('transaction_items').insert(itemsPayload);
-
-          // 3. Kurangi stok produk langsung di tabel products
-          for (const item of validDbItems) {
-            const nextStock = Math.max(0, item.product.stock - item.quantity);
-            await supabase
-              .from('products')
-              .update({ stock: nextStock, updated_at: new Date().toISOString() })
-              .eq('id', item.product.id);
-          }
-        }
-      }
+      // 2. Potong stok produk
+      await deductProductsStock(
+        cart.map((i) => ({
+          productId: i.product.id,
+          quantity: i.quantity,
+        }))
+      );
     } catch (err) {
-      console.warn('DB transaction sync warning:', err);
+      console.warn('Checkout transaction error:', err);
     } finally {
       setIsProcessingCheckout(false);
       setCompletedReceiptData(receipt);
@@ -184,7 +170,7 @@ export default function PosPage() {
       clearCart();
       setCashGiven(0);
       setCustomerName('');
-      fetchProducts(); // Refresh stok produk lokal
+      fetchProducts(); // Refresh stok produk
     }
   };
 

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Receipt, Printer, RefreshCw } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
 import { useStore } from '../context/StoreContext';
 import { ReceiptModal, ReceiptData } from '../components/pos/ReceiptModal';
+import { fetchAllTransactions, StoredTransaction } from '../lib/transactionStore';
 
 export default function Transactions() {
   const { settings } = useStore();
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<StoredTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [method, setMethod] = useState('ALL');
@@ -15,12 +15,8 @@ export default function Transactions() {
   const fetchTransactions = async () => {
     setLoading(true);
     try {
-      const { data } = await supabase
-        .from('transactions')
-        .select('*, transaction_items(*, products(name))')
-        .order('created_at', { ascending: false })
-        .limit(100);
-      if (data) setTransactions(data);
+      const data = await fetchAllTransactions();
+      setTransactions(data || []);
     } finally {
       setLoading(false);
     }
@@ -28,6 +24,10 @@ export default function Transactions() {
 
   useEffect(() => {
     fetchTransactions();
+
+    const handleCreated = () => fetchTransactions();
+    window.addEventListener('kasir_transaction_created', handleCreated);
+    return () => window.removeEventListener('kasir_transaction_created', handleCreated);
   }, []);
 
   const formatIDR = (n: number) =>

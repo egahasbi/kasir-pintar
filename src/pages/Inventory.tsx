@@ -20,6 +20,7 @@ import { Product } from '../types';
 import ProductFormModal from '../components/inventory/ProductFormModal';
 import StockAdjustmentModal from '../components/inventory/StockAdjustmentModal';
 import { exportToCsv } from '../lib/exportCsv';
+import { fetchAllProducts, deleteProductLocal } from '../lib/productStore';
 
 interface InventoryItem extends Product {
   daily_sales_velocity?: number;
@@ -57,27 +58,26 @@ export default function Inventory() {
   const fetchInventory = useCallback(async () => {
     try {
       setLoading(true);
-      const { data: products, error: prodErr } = await supabase
-        .from('products')
-        .select('*')
-        .order('name', { ascending: true });
+      const products = await fetchAllProducts();
 
-      if (prodErr) throw prodErr;
+      let salesMap: Record<string, number> = {};
+      try {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const { data: sales } = await supabase
+          .from('transaction_items')
+          .select('product_id, quantity, created_at')
+          .gte('created_at', thirtyDaysAgo.toISOString());
 
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-      const { data: sales, error: salesErr } = await supabase
-        .from('transaction_items')
-        .select('product_id, quantity, created_at')
-        .gte('created_at', thirtyDaysAgo.toISOString());
-
-      if (salesErr) throw salesErr;
-
-      const salesMap = (sales || []).reduce((acc: Record<string, number>, curr) => {
-        acc[curr.product_id] = (acc[curr.product_id] || 0) + curr.quantity;
-        return acc;
-      }, {});
+        if (sales) {
+          salesMap = sales.reduce((acc: Record<string, number>, curr) => {
+            acc[curr.product_id] = (acc[curr.product_id] || 0) + curr.quantity;
+            return acc;
+          }, {});
+        }
+      } catch {
+        // ignore sales metric err
+      }
 
       const enriched: InventoryItem[] = (products || []).map((item) => {
         const soldLast30Days = salesMap[item.id] || 0;
@@ -87,7 +87,7 @@ export default function Inventory() {
         return {
           ...item,
           daily_sales_velocity: Number(dailyVelocity.toFixed(2)),
-          days_until_depletion: daysUntilDepletion
+          days_until_depletion: daysUntilDepletion,
         };
       });
 
@@ -253,8 +253,8 @@ export default function Inventory() {
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Inventory Management</h1>
-          <p className="text-sm text-slate-500">Real-time depletion alerts and automated stock controls.</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Manajemen Inventaris & Stok</h1>
+          <p className="text-sm text-slate-500">Peringatan stok menipis secara real-time dan kontrol stok otomatis toko Anda.</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -479,7 +479,7 @@ export default function Inventory() {
                         </div>
                       </td>
                       <td className="py-3.5 px-4 text-slate-600">
-                        {item.daily_sales_velocity} units/day
+                        {item.daily_sales_velocity} unit/hari
                       </td>
                       <td className="py-3.5 px-4">
                         {getDepletionBadge(item.days_until_depletion)}
@@ -508,7 +508,7 @@ export default function Inventory() {
                           <button
                             onClick={async () => {
                               if (confirm(`Hapus produk "${item.name}"?`)) {
-                                await supabase.from('products').delete().eq('id', item.id);
+                                await deleteProductLocal(item.id);
                                 fetchInventory();
                               }
                             }}

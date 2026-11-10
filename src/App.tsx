@@ -30,6 +30,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { StoreProvider } from './context/StoreContext';
 import { supabase } from './lib/supabaseClient';
+import { fetchAllProducts } from './lib/productStore';
 
 function Navigation() {
   const location = useLocation();
@@ -40,15 +41,10 @@ function Navigation() {
 
   useEffect(() => {
     if (isAuthenticated && isAdmin) {
-      supabase
-        .from('products')
-        .select('stock, min_stock_alert')
-        .then(({ data }) => {
-          if (data) {
-            const count = data.filter((p) => p.stock <= (p.min_stock_alert || 5)).length;
-            setLowStockCount(count);
-          }
-        });
+      fetchAllProducts().then((prods) => {
+        const count = prods.filter((p) => p.stock <= (p.min_stock_alert || p.min_stock || 5)).length;
+        setLowStockCount(count);
+      });
     }
   }, [isAuthenticated, isAdmin, location.pathname]);
 

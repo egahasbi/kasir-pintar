@@ -17,6 +17,8 @@ import {
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { Product, Transaction, ForecastItem, DiscountPromotion } from '../types';
+import { fetchAllTransactions } from '../lib/transactionStore';
+import { fetchAllProducts } from '../lib/productStore';
 
 interface DashboardStats {
   todayRevenue: number;
@@ -70,51 +72,44 @@ export default function Dashboard() {
       const yesterdayStart = new Date(todayStart);
       yesterdayStart.setDate(yesterdayStart.getDate() - 1);
 
-      const { data: salesToday } = await supabase
-        .from('transactions')
-        .select('*')
-        .gte('created_at', todayStart.toISOString());
+      const allTxs = await fetchAllTransactions();
 
-      const { data: salesYesterday } = await supabase
-        .from('transactions')
-        .select('total_amount')
-        .gte('created_at', yesterdayStart.toISOString())
-        .lt('created_at', todayStart.toISOString());
+      const salesToday = allTxs.filter((tx) => new Date(tx.created_at) >= todayStart);
+      const salesYesterday = allTxs.filter((tx) => {
+        const d = new Date(tx.created_at);
+        return d >= yesterdayStart && d < todayStart;
+      });
 
-      const todayRev = salesToday?.reduce((sum, tx) => sum + (tx.total_amount || 0), 0) || 0;
-      const yesterdayRev = salesYesterday?.reduce((sum, tx) => sum + (tx.total_amount || 0), 0) || 0;
+      const todayRev = salesToday.reduce((sum, tx) => sum + (tx.final_amount || tx.total_amount || 0), 0);
+      const yesterdayRev = salesYesterday.reduce((sum, tx) => sum + (tx.final_amount || tx.total_amount || 0), 0);
       const revDiff = yesterdayRev === 0 ? 100 : Math.round(((todayRev - yesterdayRev) / yesterdayRev) * 100);
 
-      const { data: prods } = await supabase
-        .from('products')
-        .select('*')
-        .order('stock', { ascending: true });
-
-      const lowStock = (prods || []).filter(p => p.stock <= (p.min_stock_alert || 5));
+      const prods = await fetchAllProducts();
+      const lowStock = (prods || []).filter((p) => p.stock <= (p.min_stock_alert || p.min_stock || 5));
       setLowStockProducts(lowStock.slice(0, 5));
 
-      const { data: discounts } = await supabase
-        .from('discounts')
-        .select('*')
-        .eq('is_active', true);
+      let discountsCount = 0;
+      let discountsList: DiscountPromotion[] = [];
+      try {
+        const { data: discounts } = await supabase.from('discounts').select('*').eq('is_active', true);
+        if (discounts) {
+          discountsCount = discounts.length;
+          discountsList = discounts;
+        }
+      } catch {}
 
       setStats({
         todayRevenue: todayRev,
         revenueChangePct: revDiff,
-        todayTransactions: salesToday?.length || 0,
-        activeDiscountsCount: discounts?.length || 0,
-        lowStockCount: lowStock.length
+        todayTransactions: salesToday.length,
+        activeDiscountsCount: discountsCount,
+        lowStockCount: lowStock.length,
       });
 
-      const { data: recents } = await supabase
-        .from('transactions')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
+      const recents = allTxs.slice(0, 5) as any;
+      setRecentSales(recents);
 
-      setRecentSales(recents || []);
-
-      computeDiscountPerformance(salesToday || [], discounts || []);
+      computeDiscountPerformance(salesToday as any, discountsList);
       await fetchAiStockForecast();
     } catch (err) {
       console.error('Failed to load dashboard metrics:', err);
@@ -220,6 +215,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadDashboardData();
+
+    const handleCreated = () => loadDashboardData();
+    window.addEventListener('kasir_transaction_created', handleCreated);
+    return () => window.removeEventListener('kasir_transaction_created', handleCreated);
   }, []);
 
   return (

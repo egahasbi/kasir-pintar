@@ -1,20 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart3, Download, RefreshCw } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
 import { exportToCsv } from '../lib/exportCsv';
+import { fetchAllTransactions, StoredTransaction } from '../lib/transactionStore';
 
 export default function Reports() {
   const [loading, setLoading] = useState(true);
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<StoredTransaction[]>([]);
 
   const fetchReports = async () => {
     setLoading(true);
     try {
-      const { data } = await supabase
-        .from('transactions')
-        .select('*, transaction_items(*, products(name, cost_price))')
-        .order('created_at', { ascending: false });
-      if (data) setTransactions(data);
+      const data = await fetchAllTransactions();
+      setTransactions(data || []);
     } finally {
       setLoading(false);
     }
@@ -22,6 +19,10 @@ export default function Reports() {
 
   useEffect(() => {
     fetchReports();
+
+    const handleCreated = () => fetchReports();
+    window.addEventListener('kasir_transaction_created', handleCreated);
+    return () => window.removeEventListener('kasir_transaction_created', handleCreated);
   }, []);
 
   const formatIDR = (n: number) =>

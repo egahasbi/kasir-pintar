@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Check } from 'lucide-react';
-import { supabase } from '../../lib/supabaseClient';
 import { Product } from '../../types';
+import { upsertProduct } from '../../lib/productStore';
 
 interface StockAdjustmentModalProps {
   isOpen: boolean;
@@ -29,16 +29,15 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
     setLoading(true);
     try {
       const targetStock = Number(newStock);
-      const { error } = await supabase
-        .from('products')
-        .update({ stock: targetStock, updated_at: new Date().toISOString() })
-        .eq('id', product.id);
+      await upsertProduct({
+        ...product,
+        stock: targetStock,
+      });
 
-      if (error) throw error;
       onSaved();
       onClose();
-    } catch (err: any) {
-      alert(`Gagal: ${err.message}`);
+    } catch {
+      alert('Gagal memperbarui stok. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }

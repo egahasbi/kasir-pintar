@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { ShieldCheck, User, Store, KeyRound, ArrowRight, Eye, EyeOff, LogOut } from 'lucide-react';
 import { UserRole } from '../types';
+import { ForgotPasswordModal } from '../components/auth/ForgotPasswordModal';
 
 export default function Login() {
   const { signIn, switchMockRole, role, profile, isAuthenticated, signOut } = useAuth();
@@ -13,6 +14,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isForgotOpen, setIsForgotOpen] = useState(false);
 
   const handleSupabaseLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,17 +25,17 @@ export default function Login() {
     setLoading(false);
 
     if (error) {
-      setErrorMsg(error.message || 'Login gagal. Silakan coba lagi.');
+      setErrorMsg(error.message || 'Email atau kata sandi tidak sesuai. Silakan coba kembali.');
       return;
     }
 
-    navigate('/');
+    navigate(role === 'admin' || role === 'owner' ? '/dashboard' : '/pos');
   };
 
   const handleQuickDemoLogin = (targetRole: UserRole) => {
     switchMockRole(targetRole);
     if (targetRole === 'admin' || targetRole === 'owner') {
-      navigate('/');
+      navigate('/dashboard');
     } else {
       navigate('/pos');
     }
@@ -129,7 +131,18 @@ export default function Login() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold text-slate-700">Password</label>
+              {/* #6 REVISI: Lupa Password */}
+              <button
+                type="button"
+                onClick={() => setIsForgotOpen(true)}
+                className="text-xs text-emerald-600 hover:underline font-semibold"
+              >
+                Lupa Password?
+              </button>
+            </div>
+            {/* #5 REVISI: Icon view password toggle */}
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -137,12 +150,13 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-3.5 pr-10 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white"
+                className="w-full pl-3.5 pr-11 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-emerald-600 transition"
+                aria-label={showPassword ? 'Sembunyikan password' : 'Lihat password'}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -159,6 +173,13 @@ export default function Login() {
           </button>
         </form>
 
+        <div className="mt-4 text-center text-xs text-slate-500">
+          Belum punya akun toko?{' '}
+          <Link to="/register" className="text-emerald-600 font-bold hover:underline">
+            Daftar Sekarang
+          </Link>
+        </div>
+
         {isAuthenticated && (
           <div className="mt-4 pt-4 border-t border-slate-100 text-center">
             <button
@@ -172,6 +193,16 @@ export default function Login() {
           </div>
         )}
       </div>
+
+      <ForgotPasswordModal
+        isOpen={isForgotOpen}
+        onClose={() => setIsForgotOpen(false)}
+        defaultEmail={email}
+        onSuccess={(em) => {
+          setEmail(em);
+          setPassword('');
+        }}
+      />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
-import { supabase } from '../../lib/supabaseClient';
 import { Product } from '../../types';
+import { upsertProduct } from '../../lib/productStore';
 
 interface ProductFormModalProps {
   isOpen: boolean;
@@ -54,36 +54,40 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
-    if (!name.trim()) return setErrorMsg('Nama wajib diisi');
+
+    // #12 BUG: User-friendly error message
+    if (!name.trim()) {
+      return setErrorMsg('Nama produk wajib diisi.');
+    }
     const priceNum = Number(sellingPrice);
-    if (isNaN(priceNum) || priceNum <= 0) return setErrorMsg('Harga jual harus > 0');
+    if (isNaN(priceNum) || priceNum <= 0) {
+      return setErrorMsg('Harga jual harus lebih besar dari Rp 0.');
+    }
+    const costNum = Number(costPrice || 0);
+    if (costNum < 0) {
+      return setErrorMsg('Harga modal tidak boleh kurang dari Rp 0.');
+    }
 
     setLoading(true);
     try {
-      const payload: any = {
+      // #4 & #13 BUG: Gunakan upsertProduct (tersimpan lokal + sync cloud)
+      await upsertProduct({
+        id: product?.id,
         name: name.trim(),
         sku: sku.trim() || `SKU-${Date.now().toString().slice(-5)}`,
         barcode: barcode.trim() || null,
-        cost_price: Number(costPrice || 0),
+        cost_price: costNum,
         selling_price: priceNum,
+        price: priceNum,
         stock: Number(stock || 0),
         min_stock_alert: Number(minStockAlert || 5),
         is_active: true,
-        updated_at: new Date().toISOString(),
-      };
+      });
 
-      if (product?.id) {
-        const { error } = await supabase.from('products').update(payload).eq('id', product.id);
-        if (error) throw error;
-      } else {
-        payload.created_at = new Date().toISOString();
-        const { error } = await supabase.from('products').insert(payload);
-        if (error) throw error;
-      }
       onSaved();
       onClose();
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Gagal menyimpan');
+    } catch {
+      setErrorMsg('Terjadi kendala saat menyimpan produk. Silakan periksa kembali data Anda.');
     } finally {
       setLoading(false);
     }
