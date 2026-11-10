@@ -19,10 +19,19 @@ if not exist node_modules (
     )
 )
 
-echo [INFO] Membuka browser ke http://localhost:5173 ...
+echo [INFO] Membuka browser PC ke http://localhost:5173 ...
 start "" cmd /c "timeout /t 3 /nobreak >nul && start http://localhost:5173"
 
-echo [INFO] Menjalankan server dan aplikasi frontend...
+echo.
+echo ========================================================
+echo   CARA BUKA DARI HP / PERANGKAT LAIN (Satu Jaringan WiFi):
+for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4"') do (
+    echo   -> Buka browser di HP: http:%%a:5173
+)
+echo ========================================================
+echo.
+
+echo [INFO] Menjalankan server backend dan frontend...
 echo.
 call npm run dev
 

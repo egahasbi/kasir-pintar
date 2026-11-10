@@ -51,11 +51,22 @@ export const getRegisteredUsers = (): RegisteredAccount[] => {
 
 export const syncUsersWithServer = async (): Promise<RegisteredAccount[]> => {
   try {
+    const local = getRegisteredUsers();
+
+    // 1. Push local accounts to server first (ensures accounts created on PC are stored on backend)
+    if (local.length > 0) {
+      await fetch('/api/sync/users/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ users: local }),
+      }).catch(() => {});
+    }
+
+    // 2. Fetch all accounts from backend
     const res = await fetch('/api/sync/users');
     if (res.ok) {
       const { data } = await res.json();
       if (Array.isArray(data) && data.length > 0) {
-        const local = getRegisteredUsers();
         const map = new Map<string, RegisteredAccount>();
         map.set(SUPER_USER_ACCOUNT.email.toLowerCase(), SUPER_USER_ACCOUNT);
         local.forEach((u) => map.set(u.email.toLowerCase(), u));

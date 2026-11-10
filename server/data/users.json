@@ -1,0 +1,50 @@
+[
+  {
+    "id": "super-admin-001",
+    "email": "admin@admin.com",
+    "password": "admin",
+    "full_name": "Super Administrator",
+    "role": "superadmin",
+    "store_name": "KASIRKITA Platform",
+    "phone": "0812-0000-0001",
+    "created_at": "2026-01-01T00:00:00.000Z",
+    "is_active": true,
+    "last_activity_at": "2026-11-10T03:51:29.927Z"
+  },
+  {
+    "id": "user-1794282668794",
+    "email": "toko@heri.com",
+    "password": "111111",
+    "full_name": "Heri",
+    "role": "admin",
+    "store_name": "Toko Heri",
+    "phone": "12131",
+    "created_at": "2026-11-10T03:51:08.794Z",
+    "is_active": true,
+    "last_activity_at": "2026-11-10T03:52:36.881Z"
+  },
+  {
+    "id": "user-1794278655318",
+    "full_name": "Jono",
+    "email": "toko@jono.com",
+    "password": "111111",
+    "role": "admin",
+    "store_name": "Toko Jono",
+    "phone": "12345",
+    "created_at": "2026-11-10T02:44:15.318Z",
+    "is_active": true,
+    "last_activity_at": "2026-11-10T03:45:41.660Z"
+  },
+  {
+    "id": "user-1794278761945",
+    "email": "toko@iqbal.com",
+    "password": "111111",
+    "full_name": "iqbal",
+    "role": "admin",
+    "store_name": "Toko Iqbal",
+    "phone": "081111",
+    "created_at": "2026-11-10T02:46:01.945Z",
+    "is_active": true,
+    "last_activity_at": "2026-11-10T02:49:39.198Z"
+  }
+]

@@ -219,6 +219,76 @@ router.get('/sync/users', (_req: Request, res: Response): void => {
   res.status(200).json({ data: users });
 });
 
+router.post('/sync/users/push', (req: Request, res: Response): void => {
+  const { users } = req.body;
+  if (!Array.isArray(users)) {
+    res.status(400).json({ error: 'users must be an array' });
+    return;
+  }
+  const current = readJson(USERS_FILE, []);
+  const map = new Map<string, any>();
+  current.forEach((u: any) => { if (u && u.email) map.set(u.email.toLowerCase(), u); });
+  users.forEach((u: any) => { if (u && u.email) map.set(u.email.toLowerCase(), { ...map.get(u.email.toLowerCase()), ...u }); });
+  const merged = Array.from(map.values());
+  writeJson(USERS_FILE, merged);
+  res.status(200).json({ success: true, count: merged.length });
+});
+
+router.post('/sync/login', (req: Request, res: Response): void => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    res.status(400).json({ success: false, error: 'Email dan kata sandi wajib diisi.' });
+    return;
+  }
+  const cleanEmail = String(email).trim().toLowerCase();
+  const users = readJson(USERS_FILE, []);
+
+  // Default super user if not found in file
+  if (cleanEmail === 'admin@admin.com') {
+    if (password === 'admin') {
+      res.status(200).json({
+        success: true,
+        user: {
+          id: 'super-admin-001',
+          email: 'admin@admin.com',
+          full_name: 'Super Administrator',
+          role: 'superadmin',
+          store_name: 'KASIRKITA Platform',
+          phone: '0812-0000-0001',
+          created_at: '2026-01-01T00:00:00.000Z',
+          is_active: true,
+        },
+      });
+      return;
+    } else {
+      res.status(401).json({ success: false, error: 'Kata sandi salah.' });
+      return;
+    }
+  }
+
+  const user = users.find((u: any) => u.email && u.email.toLowerCase() === cleanEmail);
+  if (!user) {
+    res.status(404).json({ success: false, error: 'Akun dengan email ini belum terdaftar.' });
+    return;
+  }
+
+  if (user.is_active === false) {
+    res.status(403).json({ success: false, error: 'Akun ini telah dinonaktifkan oleh Administrator.' });
+    return;
+  }
+
+  if (user.password && user.password !== password) {
+    res.status(401).json({ success: false, error: 'Kata sandi salah. Silakan coba kembali.' });
+    return;
+  }
+
+  // Update last activity
+  user.last_activity_at = new Date().toISOString();
+  writeJson(USERS_FILE, users);
+
+  res.status(200).json({ success: true, user });
+});
+
 router.post('/sync/users', (req: Request, res: Response): void => {
   const user = req.body;
   if (!user || !user.email) {

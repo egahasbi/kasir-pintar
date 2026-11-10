@@ -158,6 +158,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     const cleanEmail = emailInput.trim().toLowerCase();
 
+    // 0. Autentikasi langsung ke server backend sentral (sinkron langsung HP dan PC)
+    try {
+      const serverRes = await fetch('/api/sync/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail, password: passwordInput }),
+      });
+      const serverData = await serverRes.json();
+      if (serverRes.ok && serverData.success && serverData.user) {
+        const u = serverData.user;
+        saveRegisteredUser(u);
+        const now = new Date().toISOString();
+        const newProf: UserProfile = {
+          id: u.id,
+          email: u.email,
+          full_name: u.full_name || 'Pengguna Toko',
+          role: u.role || 'admin',
+          store_id: u.store_name || 'default-store',
+          created_at: u.created_at || now,
+          updated_at: now,
+        };
+        setProfile(newProf);
+        localStorage.setItem('kasir_mock_role', u.role);
+        setIsLoading(false);
+        return { error: null };
+      }
+      if (serverRes.status === 401 || serverRes.status === 403) {
+        setIsLoading(false);
+        return { error: new Error(serverData.error || 'Autentikasi gagal.') };
+      }
+    } catch {}
+
     // 1. Cek akun teregistrasi (termasuk super user admin@admin.com)
     let localUsers = getRegisteredUsers();
     let matched = localUsers.find((u) => u.email.toLowerCase() === cleanEmail);
